@@ -59,4 +59,7 @@ Everything planned is written and tested locally, but it hasn't run against a re
 - [x] `/trending?format=xml` returns the same response as XML, errors included. Pages are `<result>` elements, and categories are `<category name="…">`.
 - [x] `/trending?terms=["fire","hose"]` only ranks pages whose title or URL contains one of the words, ignoring case. Words can only have letters, numbers, spaces, hyphens and underscores, since they go into SQL.
 - [x] `flame('trending', options, callback)` fetches `/trending` for the page's domain.
-- [x] The README covers setting up and deploying the Worker, using `flame()`, what's collected, and the API, including the `/track` payload and the results for subscriptions.
+- [x] Each folder has a README: `client/` for the snippet, commands and what's collected, `server/` for setup, development and the API (including the `/track` payload and the results for subscriptions), and `sql/` for the layout and queries. The root README summarises and links to them.
+- [x] CI builds, tests, type-checks and dry-run deploys on the current Node.js LTS, on every push to `main` and every pull request.
+- [x] Dependabot updates GitHub Actions and npm daily, grouping minor and patch updates, and assigns lewisgoddard.
+- [x] Node.js compatibility, on by default from the 2026-08-04 compatibility date, is turned off. Flame only uses web APIs.
