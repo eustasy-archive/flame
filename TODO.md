@@ -38,7 +38,6 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 
 ### Broken
 - [ ] Snippets load from three different URLs: `/api/code.js` (`index.html`), `/api/flame/script.js` (`client/flame.inline.js`) and `empty.js` (`index.min.html`). Point them all at the Worker's bundle URL.
-- [ ] `flame.page.js:23` and `:35` call `getAttribute('content')` without assigning the result, so description and image are DOM elements, not strings.
 
 ### To do
 - [ ] Consume the command queue. The queue function's name is in `window.flm` (`flame` by default), and its calls are in `.q`.
@@ -64,3 +63,4 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 - [x] Renamed the snippet's global function from `extinguisher()` to `flame()`.
 - [x] Snippets store the queue function's name in `window.flm`. It was `sher` in the unminified snippets and `isher` in the minified ones.
 - [x] Dropped the Flash, Java, QuickTime and Silverlight columns from `Pageviews` and `Events`.
+- [x] `flame.page.js` now stores the description and image `content` strings, not their DOM elements.

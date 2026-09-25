@@ -20,7 +20,7 @@ flame_page_description = (
 	document.getElementsByName(                 'twitter:description' )[0]
 );
 if ( flame_page_description ) {
-	flame_page_description.getAttribute('content');
+	flame_page_description = flame_page_description.getAttribute('content');
 } else {
 	flame_page_description = '';
 }
@@ -32,7 +32,7 @@ flame_page_image = (
 	document.getElementsByName(                 'twitter:image' )[0]
 );
 if ( flame_page_image ) {
-	flame_page_image.getAttribute('content');
+	flame_page_image = flame_page_image.getAttribute('content');
 } else {
 	flame_page_image = '';
 }
