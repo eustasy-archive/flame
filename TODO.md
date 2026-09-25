@@ -15,7 +15,6 @@ Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` 
 - [x] Scaffold the Worker in `server/` (`wrangler.jsonc`, `package.json`, entry point).
 - [x] Return a 404 for unknown paths.
 - [ ] Only answer `/trending` for domains in `ALLOWED_DOMAINS`, as `/track` does.
-- [ ] In `/track`, ignore requests that carry `Sec-GPC: 1` or `DNT: 1`. That also catches older client scripts.
 - [ ] Add CORS headers to `/track` and `/trending`, since other sites call them.
 - [ ] Implement `GET /trending` through the Analytics Engine SQL API, including the range limits in the README.
 - [ ] Support `format=xml` in `/trending`.
@@ -65,3 +64,4 @@ Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` 
 - [x] Language falls back to the `Accept-Language` header when the client sends none.
 - [x] `PUT` or `POST /track` stores one Analytics Engine data point per call and returns a 204. It rejects bodies that aren't JSON, are over 64 KB, or have no type or http(s) URL.
 - [x] `/track` only stores data for pages on domains in `ALLOWED_DOMAINS` (a `wrangler.jsonc` var, with `*.` for subdomains), and rejects requests whose `Origin` isn't allowed. Nothing is allowed if it's empty.
+- [x] `/track` stores nothing for requests with `Sec-GPC: 1` or `DNT: 1`, answering with a 204 as if it had.

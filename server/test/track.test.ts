@@ -59,6 +59,17 @@ describe('/track', () => {
 		expect(write).not.toHaveBeenCalled();
 	});
 
+	it.each([['Sec-GPC'], ['DNT']])('stores nothing with %s: 1', async (header) => {
+		const response = await post(JSON.stringify(pageview), { headers: { [header]: '1' } });
+		expect(response.status).toBe(204);
+		expect(write).not.toHaveBeenCalled();
+	});
+
+	it('stores pageviews with DNT: 0', async () => {
+		await post(JSON.stringify(pageview), { headers: { DNT: '0' } });
+		expect(write).toHaveBeenCalled();
+	});
+
 	it("rejects domains that aren't allowed", async () => {
 		const response = await post(JSON.stringify({ ...pageview, url: 'https://evil.net/' }));
 		expect(response.status).toBe(403);

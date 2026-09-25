@@ -8,6 +8,11 @@ const MaxBytes = 64 * 1024;
 // PUT or POST /track: store one pageview or event.
 // The client sends JSON as text/plain, to avoid a CORS preflight.
 export async function track(request: Request, env: Env): Promise<Response> {
+	// Global Privacy Control, or Do Not Track. The client checks these too, but
+	// an old copy of it might not, so they're answered as if stored.
+	if (request.headers.get('Sec-GPC') === '1' || request.headers.get('DNT') === '1') {
+		return new Response(null, { status: 204 });
+	}
 	if (!allowedOrigin(request, env)) {
 		return failure(403, 'This site isn\'t allowed to send data.');
 	}
