@@ -5,5 +5,15 @@
 	"compatibility_date": "2026-09-25",
 	"observability": {
 		"enabled": true
+	},
+	// Builds the client bundle into dist/public before `wrangler dev` and `wrangler deploy`.
+	"build": {
+		"command": "npm run build"
+	},
+	"assets": {
+		"directory": "./dist/public",
+		"binding": "ASSETS",
+		// The Worker picks which build to serve, so it sees every request first.
+		"run_worker_first": true
 	}
 }

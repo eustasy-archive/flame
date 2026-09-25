@@ -16,8 +16,6 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 
 - [x] Scaffold the Worker in `server/` (`wrangler.jsonc`, `package.json`, entry point).
 - [x] Return a 404 for unknown paths.
-- [ ] Serve the client bundle at one stable URL. Build it from `client/` at deploy time instead of joining files on every request. `?verbose` serves the unminified build.
-- [ ] Drop `/inline`. The snippet is meant to be pasted into pages, not fetched.
 - [ ] Delete `index.php` once the Worker serves the bundle.
 - [ ] Implement `PUT /track`, writing one Analytics Engine data point per call.
 - [ ] Only accept `/track` and `/trending` for domains in an allowlist (`ALLOWED_DOMAINS`).
@@ -67,3 +65,4 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 - [x] Removed `function.getElementsByAttribute.js`, which patched `HTMLElement.prototype`. `flame.page.js` uses `querySelectorAll` instead.
 - [x] `npm run build` in `server/` bundles `client/flame.js` with esbuild into `dist/public/flame.js` and `flame.min.js`. The bundle adds no globals to host pages, and Platform.js no longer registers with AMD loaders like RequireJS. `lib.platform.min.js` is gone. `flame.inline.min.js` stays as the snippet to paste.
 - [x] Client tests run in Vitest with jsdom (`client/test/`).
+- [x] The Worker serves the client bundle at `/flame.js` from Workers Static Assets, minified unless `?verbose` is set. `wrangler dev` and `wrangler deploy` build it first. `/inline` is gone.
