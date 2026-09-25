@@ -1,0 +1,27 @@
+(
+	function(e, x, t, i, n, g, u) {
+		// Array to hold values passed to the function, and timestamp.
+		e['sher'] = n;
+		e[n] = e[n] || function() {
+			(
+				e[n].q = e[n].q || []
+			).push(arguments);
+		},
+		e[n].l = 1 * new Date();
+		// Create an Asynchronous Script element
+		g = x.createElement(t),
+		u = x.getElementsByTagName(t)[0],
+		g.async = 1,
+		g.src = i,
+		u.parentNode.insertBefore(g, u);
+	}
+)
+(
+	window,                                            // e
+	document,                                          // x
+	'script',                                          // t
+	'https://extinguisher.io/api/flame/script.js?v=1', // i
+	'extinguisher'                                     // n
+	// New script element                              // g
+	// First script element in document                // u
+);
