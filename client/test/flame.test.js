@@ -147,6 +147,43 @@ describe('flame()', () => {
 		expect(Warn).toHaveBeenCalledWith('Flame doesn\'t know the setting "dnt-honor".');
 	});
 
+	describe('trending', () => {
+		it("fetches trending pages for this page's domain", async () => {
+			var Results = { success: true, warning: false, error: false, count: 0, results: [] };
+			var Fetch = vi.spyOn(window, 'fetch').mockResolvedValue(Response.json(Results));
+			var Callback = vi.fn();
+			load([ [ 'trending', { range: 7200, terms: [ 'fire', 'hose' ] }, Callback ] ]);
+			await vi.waitFor(() => expect(Callback).toHaveBeenCalled());
+			var Url = new URL(Fetch.mock.calls[0][0]);
+			expect(Url.origin + Url.pathname).toBe('https://flame.example.com/trending');
+			expect(Object.fromEntries(Url.searchParams)).toEqual({ domain: 'blog.example.com', range: '7200', terms: '["fire","hose"]', format: 'json' });
+			expect(Callback).toHaveBeenCalledWith(Results);
+		});
+
+		it('lets the domain and type be chosen', async () => {
+			var Fetch = vi.spyOn(window, 'fetch').mockResolvedValue(Response.json({}));
+			load([ [ 'trending', { domain: 'example.com', type: 'payment', category: '__ALL__' }, () => {} ] ]);
+			var Url = new URL(Fetch.mock.calls[0][0]);
+			expect(Object.fromEntries(Url.searchParams)).toEqual({ domain: 'example.com', type: 'payment', category: '__ALL__', format: 'json' });
+		});
+
+		it('tells the callback when the fetch fails', async () => {
+			vi.spyOn(window, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
+			var Callback = vi.fn();
+			load([ [ 'trending', {}, Callback ] ]);
+			await vi.waitFor(() => expect(Callback).toHaveBeenCalled());
+			expect(Callback).toHaveBeenCalledWith({ success: false, warning: false, error: "Flame couldn't fetch trending data." });
+		});
+
+		it("isn't stopped by privacy signals, since it tracks nothing", () => {
+			Object.defineProperty(navigator, 'globalPrivacyControl', { configurable: true, value: true });
+			var Fetch = vi.spyOn(window, 'fetch').mockResolvedValue(Response.json({}));
+			load([ [ 'trending', {}, () => {} ] ]);
+			delete navigator.globalPrivacyControl;
+			expect(Fetch).toHaveBeenCalled();
+		});
+	});
+
 	it("sends nothing if it can't tell where it was loaded from", () => {
 		document.head.innerHTML = '';
 		vi.spyOn(console, 'warn').mockImplementation(() => {});

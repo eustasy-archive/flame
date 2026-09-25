@@ -21,7 +21,9 @@ flame('setting', 'honor-privacy-signals', true);
 flame('setting', 'session', false);
 flame('track', 'pageview', 'Funny');
 flame('track', 'payment', 1200, 'Linux');
-flame('trending', 7200);
+flame('trending', { range: 7200 }, function(Trending) {
+	console.log(Trending.results);
+});
 console.log(window.flame.q);
 ```
 
@@ -59,7 +61,9 @@ Server-side. Location comes from `request.cf` (country, region, city) in the Wor
 ### get /trending
 
 ```
-flame('trending', 'pageview', location.host, '10', '__MAX__', 'json');
+flame('trending', { type: 'pageview', domain: location.hostname, count: 10, range: '__MAX__' }, function(Trending) {
+	console.log(Trending.results);
+});
 ```
 
 #### Request

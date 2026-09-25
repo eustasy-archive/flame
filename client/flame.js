@@ -31,7 +31,8 @@ var Commands = {
 		}
 		Settings[Name] = Value;
 	},
-	track: track
+	track: track,
+	trending: trending
 };
 
 function server() {
@@ -117,6 +118,34 @@ function track(Type, Data, Category) {
 	Payload.category = Category ? String( Category ) : '';
 	Payload.value = ( Payload.type == 'payment' || Payload.type == 'subscription' ) ? ( Number( Data ) || 0 ) : 0;
 	send('/track', Payload);
+}
+
+// flame('trending', options, callback)
+// Options are /trending's parameters: type, domain (this page's by default),
+// count, range, category and terms (a list of words). The callback gets the
+// parsed response, or { success: false, error: '…' } if it couldn't be fetched.
+function trending(Options, Callback) {
+	var Parameters = { domain: location.hostname };
+	var Name;
+	Options = Options || {};
+	for ( Name in Options ) {
+		if ( Options.hasOwnProperty(Name) ) {
+			Parameters[Name] = Name == 'terms' ? JSON.stringify(Options[Name]) : Options[Name];
+		}
+	}
+	Parameters.format = 'json';
+	Callback = Callback || function() {};
+	if ( !Server || !window.fetch ) {
+		Callback({ success: false, warning: false, error: 'Flame couldn\'t fetch trending data.' });
+		return;
+	}
+	fetch(Server + '/trending?' + new URLSearchParams(Parameters), { credentials: 'omit' })
+		.then(function(Response) {
+			return Response.json();
+		})
+		.then(Callback, function() {
+			Callback({ success: false, warning: false, error: 'Flame couldn\'t fetch trending data.' });
+		});
 }
 
 function send(Path, Payload) {
