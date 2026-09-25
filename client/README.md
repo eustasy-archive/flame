@@ -4,7 +4,23 @@ The browser script that collects data about a page and sends it to the Worker, a
 
 ## The snippet
 
-The snippet loads `/flame.js` asynchronously and queues any `flame(…)` calls until it arrives, so it can go anywhere on the page. It adds two globals: `flame`, the function, and `flm`, the function's name. To use another name, change the snippet's last argument.
+Paste this into each page, with your Worker's hostname in place of `flame.example.com`:
+
+```html
+<script>
+(function(e,x,t,i,n,g,u){e['flm']=n;e[n]=e[n]||function(){(
+e[n].q=e[n].q||[]).push(arguments)},e[n].l=1*new Date();g=x.createElement(t),
+u=x.getElementsByTagName(t)[0],g.async=1,g.src=i,u.parentNode.insertBefore(g,u)
+})(window,document,'script','https://flame.example.com/flame.js?v=1','flame');
+flame('track', 'pageview');
+</script>
+```
+
+The snippet loads `/flame.js` asynchronously and queues any `flame(…)` calls until it arrives, so it can go anywhere on the page. It adds two globals: `flame`, the function, and `flm`, the function's name. To use another name, change the snippet's last argument. Change its `?v=1` to make browsers fetch a new copy of the script sooner than their hour-long cache would.
+
+It's kept in [`snippet.min.js`](snippet.min.js), with a readable copy in [`snippet.js`](snippet.js). A test checks that the READMEs match it.
+
+After the snippet, a page can call any of the [commands](#commands):
 
 ```js
 flame('setting', 'session', false);
@@ -14,8 +30,6 @@ flame('trending', { range: 7200 }, function(Trending) {
 	console.log(Trending.results);
 });
 ```
-
-Paste [`flame.inline.js`](flame.inline.js), or its minified copy [`flame.inline.min.js`](flame.inline.min.js), into each page, replacing `flame.example.com` with the Worker's hostname. Change its `?v=1` to make browsers fetch a new copy of the script sooner than their hour-long cache would.
 
 ## Commands
 
@@ -76,7 +90,7 @@ flame('trending', { type: 'pageview', count: 5, range: 86400, terms: ['fire', 'h
 | File | Contents |
 |---|---|
 | `flame.js` | The entry point. It runs the snippet's queue and each command, and sends data. |
-| `flame.inline.js`, `flame.inline.min.js` | The snippet. |
+| `snippet.js`, `snippet.min.js` | The snippet, readable and minified. |
 | `flame.*.js` | One collector each, listed above. |
 | `lib.platform.js` | [Platform.js](https://github.com/bestiejs/platform.js) 1.3.6, unmodified. |
 | `test/` | Tests, run in Vitest with jsdom. |

@@ -37,7 +37,7 @@ Everything planned is written and tested locally, but it hasn't run against a re
 - [x] `flame.page.js` tries each candidate until one has a value, only reads `name=` lookups from `<meta>` tags, and skips microdata on nested items such as an article's author.
 - [x] `flame.page.js` prefers microdata on the page's main item (`Article`, `WebPage`, `Product`, `mainEntity`, etc.) and ignores site-wide items such as `Organization` and `WebSite`.
 - [x] Removed `function.getElementsByAttribute.js`, which patched `HTMLElement.prototype`. `flame.page.js` uses `querySelectorAll` instead.
-- [x] `npm run build` in `server/` bundles `client/flame.js` with esbuild into `dist/public/flame.js` and `flame.min.js`. The bundle adds no globals to host pages, and Platform.js no longer registers with AMD loaders like RequireJS. `lib.platform.min.js` is gone. `flame.inline.min.js` stays as the snippet to paste.
+- [x] `npm run build` in `server/` bundles `client/flame.js` with esbuild into `dist/public/flame.js` and `flame.min.js`. The bundle adds no globals to host pages, and Platform.js no longer registers with AMD loaders like RequireJS. `lib.platform.min.js` is gone. The snippet's minified copy is still written by hand.
 - [x] Client tests run in Vitest with jsdom (`client/test/`).
 - [x] The Worker serves the client bundle at `/flame.js` from Workers Static Assets, minified unless `?verbose` is set. `wrangler dev` and `wrangler deploy` build it first. `/inline` is gone.
 - [x] Deleted `index.php`. The Worker replaces it.
@@ -63,3 +63,4 @@ Everything planned is written and tested locally, but it hasn't run against a re
 - [x] CI builds, tests, type-checks and dry-run deploys on the current Node.js LTS, on every push to `main` and every pull request.
 - [x] Dependabot updates GitHub Actions and npm daily, grouping minor and patch updates, and assigns lewisgoddard.
 - [x] Node.js compatibility, on by default from the 2026-08-04 compatibility date, is turned off. Flame only uses web APIs.
+- [x] The snippet is `client/snippet.js`, with `snippet.min.js` to paste, which the root and client READMEs include. `index.html` and `index.min.html` are gone: their example calls are in the client README.

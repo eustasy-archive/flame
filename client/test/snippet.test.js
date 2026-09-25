@@ -2,13 +2,30 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 var Root = join(import.meta.dirname, '../..');
+var Minified = readFileSync(join(Root, 'client/snippet.min.js'), 'utf8').trim();
+var Readmes = [ 'README.md', 'client/README.md' ];
+
+// Each ```html block in a README that has the snippet in it.
+function pasted(file) {
+	var Blocks = readFileSync(join(Root, file), 'utf8').match(/```html\n[\s\S]*?```/g) || [];
+	return Blocks.map((Block) => Block.slice('```html\n'.length, -'```'.length)).filter((Block) => Block.includes("e['flm']"));
+}
+
+describe.each(Readmes)('%s', (file) => {
+	it('shows the minified snippet', () => {
+		var Blocks = pasted(file);
+		expect(Blocks.length).toBeGreaterThan(0);
+		for ( var Block of Blocks ) {
+			expect(Block).toContain(Minified);
+		}
+	});
+});
 
 describe.each([
-	'client/flame.inline.js',
-	'client/flame.inline.min.js',
-	'index.html',
-	'index.min.html'
-])('%s', (file) => {
+	[ 'client/snippet.js', readFileSync(join(Root, 'client/snippet.js'), 'utf8') ],
+	[ 'client/snippet.min.js', Minified ],
+	...Readmes.flatMap((file) => pasted(file).map((Block) => [ file, Block ]))
+])('%s', (file, Code) => {
 	beforeEach(() => {
 		document.head.innerHTML = '<script></script>';
 		delete window.flm;
@@ -16,10 +33,7 @@ describe.each([
 	});
 
 	it('loads the bundle and queues calls', () => {
-		var Code = readFileSync(join(Root, file), 'utf8').replace(/<\/?script>/g, '');
-		vi.spyOn(console, 'log').mockImplementation(() => {});
-		( 0, eval )( Code );
-		vi.restoreAllMocks();
+		( 0, eval )( Code.replace(/<\/?script>/g, '') );
 
 		var Script = document.head.querySelector('script[src]');
 		expect(Script.src).toBe('https://flame.example.com/flame.js?v=1');

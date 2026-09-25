@@ -10,8 +10,6 @@ Pageview and event tracking for your own sites, with an API for their trending p
 | [`server/`](server/README.md) | The Cloudflare Worker: setting it up, developing it, and its API. |
 | [`sql/`](sql/README.md) | The layout of each Analytics Engine data point, and the queries behind `/trending`. |
 
-`index.html` and `index.min.html` are example embeds of the snippet.
-
 ## Quick start
 
 From `server/`, which has the tooling for both the Worker and the client:
@@ -22,4 +20,14 @@ npm test
 npm run dev
 ```
 
-Then [set up](server/README.md#set-up) and deploy the Worker, and [embed the snippet](client/README.md#the-snippet) in your pages.
+Then [set up](server/README.md#set-up) and deploy the Worker, and paste [the snippet](client/README.md#the-snippet) into your pages, with your Worker's hostname in place of `flame.example.com`:
+
+```html
+<script>
+(function(e,x,t,i,n,g,u){e['flm']=n;e[n]=e[n]||function(){(
+e[n].q=e[n].q||[]).push(arguments)},e[n].l=1*new Date();g=x.createElement(t),
+u=x.getElementsByTagName(t)[0],g.async=1,g.src=i,u.parentNode.insertBefore(g,u)
+})(window,document,'script','https://flame.example.com/flame.js?v=1','flame');
+flame('track', 'pageview');
+</script>
+```
