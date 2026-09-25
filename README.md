@@ -17,7 +17,7 @@ Pageview and event tracking, with an API for trending pages. Unfinished; see [TO
 Fetches an asynchronous code snippet (which is surprisingly [well supported](http://caniuse.com/#feat=script-async)) that does all of the work once you've made your decisions. Not something you access directly, you use the snippet in [client/flame.inline.js](client/flame.inline.js).
 
 ```
-flame('setting', 'dnt-honor', true);
+flame('setting', 'honor-privacy-signals', true);
 flame('setting', 'session', false);
 flame('track', 'pageview', 'Funny');
 flame('track', 'payment', 1200, 'Linux');

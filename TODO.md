@@ -32,7 +32,6 @@ Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` 
 
 ## Client (`client/`)
 
-- [ ] Honour privacy signals. If `navigator.globalPrivacyControl === true` or `navigator.doNotTrack === '1'`, collect and send nothing. The setting is `honor-privacy-signals` (default `true`), replacing `dnt-honor`.
 - [ ] Let sites turn off the localStorage session ID with `flame('setting', 'session', false)`, e.g. until they have consent. In the EU, storing it generally needs consent, since analytics isn't strictly necessary. Privacy signals don't cover that.
 - [ ] User-agent strings are now frozen. Also read `navigator.userAgentData` (User-Agent Client Hints) where it's available.
 
@@ -64,3 +63,4 @@ Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` 
 - [x] All four snippets load `https://flame.example.com/flame.js?v=1`, a placeholder for the Worker's hostname, and a test checks they agree.
 - [x] The bundle runs the snippet's queued calls, then replaces `window[window.flm]` so later calls run straight away. It supports `setting` and `track`. Unknown commands and errors are logged, never thrown at the host page.
 - [x] `flame('track', …)` sends everything collected to `/track` on the server the script came from, with `sendBeacon` (falling back to `fetch`). It's sent as `text/plain`, so there's no CORS preflight.
+- [x] The client collects, stores and sends nothing when Global Privacy Control or Do Not Track is on, unless a site sets `honor-privacy-signals` to `false`. That setting replaces `dnt-honor`, and unknown settings are logged.

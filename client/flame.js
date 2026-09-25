@@ -12,11 +12,18 @@ import { timezone } from './flame.timezone.js';
 // Where this script was loaded from, which is also where data is sent.
 var Server = server();
 
-var Settings = {};
+// Settings for flame('setting', name, value), with their defaults.
+var Settings = {
+	'honor-privacy-signals': true
+};
 
 // Commands for flame('command', …).
 var Commands = {
 	setting: function(Name, Value) {
+		if ( !Settings.hasOwnProperty(Name) ) {
+			warn('Flame doesn\'t know the setting "' + Name + '".');
+			return;
+		}
 		Settings[Name] = Value;
 	},
 	track: track
@@ -37,6 +44,11 @@ function warn(Message) {
 	if ( window.console && console.warn ) {
 		console.warn(Message);
 	}
+}
+
+// Global Privacy Control, or Do Not Track, which it replaces.
+function optedOut() {
+	return navigator.globalPrivacyControl === true || navigator.doNotTrack === '1' || window.doNotTrack === '1';
 }
 
 // The session only counts one pageview per page load, however often it's read.
@@ -85,7 +97,12 @@ function collect() {
 // Pageviews default their data to the page's URL. Payments and subscriptions
 // take an amount as their data, as an integer (e.g. pence) rather than a float.
 function track(Type, Data, Category) {
-	var Payload = collect();
+	var Payload;
+	// Checked before anything is collected or stored.
+	if ( Settings['honor-privacy-signals'] && optedOut() ) {
+		return;
+	}
+	Payload = collect();
 	Payload.type = String( Type || 'pageview' );
 	if ( Data === undefined || Data === null ) {
 		Data = Payload.type == 'pageview' ? Payload.url : '';

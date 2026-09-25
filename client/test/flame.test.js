@@ -93,6 +93,41 @@ describe('flame()', () => {
 		expect(Fetch).toHaveBeenCalledWith('https://flame.example.com/track', expect.objectContaining({ method: 'POST', keepalive: true }));
 	});
 
+	describe('privacy signals', () => {
+		afterEach(() => {
+			delete navigator.globalPrivacyControl;
+			delete navigator.doNotTrack;
+		});
+
+		it.each([
+			[ 'Global Privacy Control', 'globalPrivacyControl', true ],
+			[ 'Do Not Track', 'doNotTrack', '1' ]
+		])('collects and sends nothing with %s', (name, property, value) => {
+			Object.defineProperty(navigator, property, { configurable: true, value: value });
+			load([ [ 'track' ] ]);
+			expect(navigator.sendBeacon).not.toHaveBeenCalled();
+			expect(localStorage.getItem('flame_session')).toBeNull();
+		});
+
+		it("tracks when Do Not Track is '0'", () => {
+			Object.defineProperty(navigator, 'doNotTrack', { configurable: true, value: '0' });
+			load([ [ 'track' ] ]);
+			expect(navigator.sendBeacon).toHaveBeenCalled();
+		});
+
+		it('can be ignored with honor-privacy-signals', () => {
+			Object.defineProperty(navigator, 'globalPrivacyControl', { configurable: true, value: true });
+			load([ [ 'setting', 'honor-privacy-signals', false ], [ 'track' ] ]);
+			expect(navigator.sendBeacon).toHaveBeenCalled();
+		});
+	});
+
+	it('warns about unknown settings', () => {
+		var Warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		load([ [ 'setting', 'dnt-honor', true ] ]);
+		expect(Warn).toHaveBeenCalledWith('Flame doesn\'t know the setting "dnt-honor".');
+	});
+
 	it("sends nothing if it can't tell where it was loaded from", () => {
 		document.head.innerHTML = '';
 		vi.spyOn(console, 'warn').mockImplementation(() => {});
