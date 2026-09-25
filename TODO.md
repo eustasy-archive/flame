@@ -53,5 +53,6 @@ Flame is an unfinished 2015 prototype. Nothing works end-to-end yet: the snippet
 
 ## Bundled libraries
 
-- [ ] **Platform.js** 1.3.0 → 1.3.6 (`_flame/lib.platform.js` + `.min.js`). User-agent strings are now frozen, so consider `navigator.userAgentData` as well.
+- [x] **Platform.js** 1.3.0 → 1.3.6 (`_flame/lib.platform.js` + `.min.js`).
+- [ ] User-agent strings are now frozen. Consider also reading `navigator.userAgentData` (User-Agent Client Hints).
 - [ ] **session.js** 0.4.1 is abandoned upstream. Replace it rather than update: its location and plugin detection is dead. Do location server-side with MaxMind GeoLite2 instead of PECL `geoip`.
