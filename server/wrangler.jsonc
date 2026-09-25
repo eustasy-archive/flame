@@ -9,6 +9,11 @@
 	"observability": {
 		"enabled": true
 	},
+	// Workers Cache: Cloudflare caches GET responses in front of the Worker, by
+	// path and query string, following their Cache-Control and Vary headers.
+	"cache": {
+		"enabled": true
+	},
 	// The /trending queries in ../sql are imported as text.
 	"rules": [
 		{

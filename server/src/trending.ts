@@ -2,7 +2,7 @@ import pageviewsSql from '../../sql/trending-pageviews.sql';
 import totalSql from '../../sql/trending-total.sql';
 import valuesSql from '../../sql/trending-values.sql';
 import { allowed, allowedOrigin } from './allowed';
-import { cachedQuery, fill, hex, number, type Row } from './analytics';
+import { fill, hex, number, query, type Row } from './analytics';
 import { json } from './respond';
 import { xml } from './xml';
 
@@ -126,7 +126,7 @@ function whole(value: string | null, fallback: number, max: number): number | un
 }
 
 // GET /trending
-export async function trending(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+export async function trending(request: Request, env: Env): Promise<Response> {
 	const checked = parameters(new URL(request.url).searchParams);
 	if ('error' in checked) {
 		return failure(checked.format, 400, checked.error);
@@ -142,7 +142,7 @@ export async function trending(request: Request, env: Env, ctx: ExecutionContext
 		return failure(p.format, 500, 'The Worker needs CF_ACCOUNT_ID and CF_API_TOKEN to query Analytics Engine.');
 	}
 
-	const run = cachedQuery(env, ctx, new URL(request.url).origin);
+	const run = (sql: string) => query(env, sql);
 	let results: Record<string, unknown>[] | Record<string, Record<string, number>>;
 	try {
 		results = p.type === 'pageview' ? await pageviews(run, env, p) : await values(run, env, p);
@@ -150,6 +150,9 @@ export async function trending(request: Request, env: Env, ctx: ExecutionContext
 		console.error(error);
 		return failure(p.format, 502, "Couldn't query Analytics Engine.");
 	}
+	// Workers Cache keeps successful responses for a minute, in front of the
+	// Worker, so repeat requests don't reach the rate-limited SQL API. Responses
+	// vary by Origin (see cors.ts), so each site gets its own CORS headers.
 	return respond(
 		p.format,
 		{

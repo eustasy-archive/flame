@@ -1,4 +1,3 @@
-import { createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
 import { env, exports } from 'cloudflare:workers';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { trending } from '../src/trending';
@@ -25,11 +24,6 @@ async function get(query: string, init: RequestInit = {}) {
 const TermsError = 'terms must be a JSON list of up to 10 words, like ["fire","hose"]. Words can have letters, numbers, spaces, hyphens and underscores.';
 
 describe('/trending', () => {
-	// Each test should reach the stand-in API, rather than rows cached by an
-	// earlier test. Caching has its own tests below.
-	beforeEach(() => {
-		vi.spyOn(caches.default, 'match').mockResolvedValue(undefined);
-	});
 	afterEach(() => {
 		vi.restoreAllMocks();
 	});
@@ -286,7 +280,7 @@ describe('/trending', () => {
 	});
 
 	it('says when the Worker has no API token', async () => {
-		const response = await trending(new Request('https://flame.example.com/trending?domain=blog.example.com'), { ...env, CF_API_TOKEN: '' }, createExecutionContext());
+		const response = await trending(new Request('https://flame.example.com/trending?domain=blog.example.com'), { ...env, CF_API_TOKEN: '' });
 		expect(response.status).toBe(500);
 		expect((await response.json<{ error: string }>()).error).toBe('The Worker needs CF_ACCOUNT_ID and CF_API_TOKEN to query Analytics Engine.');
 	});
@@ -294,64 +288,5 @@ describe('/trending', () => {
 	it('only takes GET', async () => {
 		const response = await exports.default.fetch('https://flame.example.com/trending?domain=blog.example.com', { method: 'POST' });
 		expect(response.status).toBe(405);
-	});
-});
-
-describe('caching', () => {
-	afterEach(() => {
-		vi.restoreAllMocks();
-	});
-
-	// Call the handler directly, waiting for the cache writes it leaves running.
-	async function cached(query: string, init: RequestInit = {}) {
-		const ctx = createExecutionContext();
-		const response = await trending(new Request(`https://flame.example.com/trending?${query}`, init), env, ctx);
-		await waitOnExecutionContext(ctx);
-		return { status: response.status, body: await response.json<Record<string, any>>() };
-	}
-
-	it('answers repeat requests without the SQL API', async () => {
-		const fetch = api({ pageviews: [{ data: 'https://blog.example.com/a', count: '5' }], total: { count: '5' } });
-		const first = await cached('domain=blog.example.com&range=1001');
-		expect(fetch).toHaveBeenCalledTimes(2);
-		const second = await cached('domain=blog.example.com&range=1001');
-		expect(fetch).toHaveBeenCalledTimes(2);
-		expect(second).toEqual(first);
-		expect(second.body.results[0].url).toBe('https://blog.example.com/a');
-	});
-
-	it('queries again when the parameters differ', async () => {
-		const fetch = api({ pageviews: [], total: { count: '0' } });
-		await cached('domain=blog.example.com&range=1002');
-		await cached('domain=blog.example.com&range=1002&count=5');
-		// The totals don't depend on count, so they're only queried once.
-		expect(fetch).toHaveBeenCalledTimes(3);
-	});
-
-	it('shares rows between requests that ask for the same thing differently', async () => {
-		const fetch = api({ pageviews: [], total: { count: '0' } });
-		const exact = await cached('domain=blog.example.com&category=Shared&range=7776000&count=100');
-		const over = await cached('domain=blog.example.com&category=Shared&range=99999999&count=__MAX__');
-		expect(fetch).toHaveBeenCalledTimes(2);
-		// Each request still gets its own warnings.
-		expect(exact.body.warning).toBe(false);
-		expect(over.body.warning).toBe("range can't be more than 90 days (7776000 seconds), so it was cut to that.");
-	});
-
-	it("doesn't cache failed queries", async () => {
-		vi.spyOn(console, 'error').mockImplementation(() => {});
-		vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Too many requests', { status: 429 }));
-		expect((await cached('domain=blog.example.com&range=1003')).status).toBe(502);
-		vi.restoreAllMocks();
-		const fetch = api({ pageviews: [], total: { count: '0' } });
-		expect((await cached('domain=blog.example.com&range=1003')).status).toBe(200);
-		expect(fetch).toHaveBeenCalledTimes(2);
-	});
-
-	it('still checks the allowlist before using the cache', async () => {
-		api({ pageviews: [], total: { count: '0' } });
-		await cached('domain=blog.example.com&range=1004');
-		const { status } = await cached('domain=blog.example.com&range=1004', { headers: { Origin: 'https://evil.net' } });
-		expect(status).toBe(403);
 	});
 });

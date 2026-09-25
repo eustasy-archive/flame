@@ -24,9 +24,8 @@ export function fill(template: string, values: Record<string, string | number>):
 
 // A string's UTF-8 bytes as lowercase hex, to compare a column against without
 // putting the string in SQL: lower(hex(blob3)) = '…'.
-export function hex(value: string | ArrayBuffer): string {
-	const bytes = typeof value === 'string' ? new TextEncoder().encode(value) : new Uint8Array(value);
-	return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+export function hex(value: string): string {
+	return Array.from(new TextEncoder().encode(value), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
 // Run a query and return its rows. Throws if the API answers with an error.
@@ -41,26 +40,6 @@ export async function query(env: Env, sql: string): Promise<Row[]> {
 	}
 	const body = await response.json<{ data?: Row[] }>();
 	return body.data ?? [];
-}
-
-// How long each query's rows are cached, in seconds.
-export const CacheSeconds = 60;
-
-// Run queries through the Cache API: each query's rows are kept for a minute in
-// the data center that ran it, so repeat requests don't reach the SQL API, which
-// is rate-limited. Failed queries aren't cached. The Cache API only works when
-// the Worker is on a custom domain: on workers.dev, nothing is cached.
-export function cachedQuery(env: Env, ctx: ExecutionContext, origin: string): (sql: string) => Promise<Row[]> {
-	return async (sql) => {
-		const key = new Request(`${origin}/_cache/sql/${hex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(sql)))}`);
-		const hit = await caches.default.match(key);
-		if (hit) {
-			return hit.json<Row[]>();
-		}
-		const rows = await query(env, sql);
-		ctx.waitUntil(caches.default.put(key, Response.json(rows, { headers: { 'Cache-Control': `max-age=${CacheSeconds}` } })));
-		return rows;
-	};
 }
 
 // The API returns 64-bit integers as strings, and NaN for averages of nothing.

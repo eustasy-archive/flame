@@ -38,7 +38,8 @@ Run these in `server/`.
    - `flame('track', …)` collects everything about the page and sends it to `/track` with `sendBeacon`.
 3. **`/track`** (`server/src/track.ts`) checks the request against the allowlist and privacy headers. `server/src/datapoint.ts` then lays the body out as an Analytics Engine data point, and the Worker writes it.
 4. **`/trending`** (`server/src/trending.ts`) checks its parameters and the allowlist.
-   - It fills in the `.sql` templates in `sql/` and queries Analytics Engine's SQL API (`server/src/analytics.ts`), caching each query's rows for a minute.
+   - It fills in the `.sql` templates in `sql/` and queries Analytics Engine's SQL API (`server/src/analytics.ts`).
+   - Workers Cache, in front of the Worker, keeps successful responses for a minute. It follows each response's `Cache-Control` and `Vary` headers, so anything without a `Cache-Control` header is sent with `no-store` (`cacheable()` in `server/src/index.ts`).
    - It shapes the rows into the response, as JSON or XML.
 
 ## Files
@@ -61,7 +62,7 @@ Run these in `server/`.
 | `src/track.ts` | `/track`. |
 | `src/datapoint.ts` | The data point layout, and turning a `/track` body into a data point. |
 | `src/trending.ts` | `/trending`: checking its parameters and shaping its results. |
-| `src/analytics.ts` | Filling in the `sql/` templates, and querying and caching the SQL API. |
+| `src/analytics.ts` | Filling in the `sql/` templates, and querying the SQL API. |
 | `src/allowed.ts` | The `ALLOWED_DOMAINS` allowlist. |
 | `src/cors.ts` | CORS headers and preflights. |
 | `src/xml.ts` | `/trending`'s XML format. |
@@ -80,7 +81,7 @@ The `/trending` query templates, and [the data point layout](sql/README.md).
 - **`server`** runs `server/test/` inside the Workers runtime, through Miniflare.
   - Most tests go through the Worker with `exports.default.fetch`, as a real request would.
   - There's no real SQL API, so `/trending` tests spy on `fetch` and answer with made-up rows. That means the queries themselves have never run against Analytics Engine.
-  - `/trending`'s tests skip cache lookups, so each one reaches the made-up API. The caching tests use parameters of their own, so they don't find another test's rows.
+  - Neither the tests nor `wrangler dev` emulate Workers Cache, so `test/caching.test.ts` checks the `Cache-Control` and `Vary` headers it follows instead.
 - **`client`** runs `client/test/` in jsdom.
   - Since `client/` has no `package.json`, the tests use Vitest's globals (`describe`, `it`, `expect`, `vi`) instead of importing them.
   - `setup.js` swaps Node's own `localStorage` for jsdom's.
@@ -139,4 +140,4 @@ Replace `client/lib.platform.js` with `platform.js` from the npm package (`npm p
 
 ## Commits and TODO.md
 
-Keep each commit to one change, with a message that says why. [TODO.md](TODO.md) tracks what's left: tick items off, or move them to Done, in the commit that finishes them.
+Keep each commit to one change, with a message that says why. [TODO.md](TODO.md) tracks what's left: remove an item in the commit that finishes it.
