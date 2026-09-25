@@ -47,8 +47,7 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 - [ ] Honour privacy signals. If `navigator.globalPrivacyControl === true` or `navigator.doNotTrack === '1'`, collect and send nothing, and check before `flame.session.js` writes to localStorage. Global Privacy Control replaces Do Not Track, which is deprecated (Firefox removed it in 135) but still sent by Chrome.
 - [ ] Check whether the session ID that `flame.session.js` keeps in localStorage needs consent in the EU. Privacy signals don't cover that.
 - [ ] Add a build step (e.g. esbuild) that bundles and minifies `client/`, replacing the hand-committed `.min.js` files.
-- [ ] Wrap client code in an IIFE. It currently leaks `flame_*` globals and patches `HTMLElement.prototype` on host sites.
-- [ ] Replace `getElementsByAttribute` with `querySelector('[attr="value"]')`.
+- [ ] Wrap client code in an IIFE. It currently leaks `flame_*` globals on host sites.
 - [ ] User-agent strings are now frozen. Consider also reading `navigator.userAgentData` (User-Agent Client Hints).
 
 ## Docs
@@ -69,3 +68,4 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 - [x] `flame.page.js` now stores the description and image `content` strings, not their DOM elements.
 - [x] `flame.page.js` reads microdata on ordinary elements (text, `src` or `href`), and an empty title falls back to `document.title`.
 - [x] `flame.page.js` tries each candidate until one has a value, only reads `name=` lookups from `<meta>` tags, and skips microdata on nested items such as an article's author.
+- [x] Removed `function.getElementsByAttribute.js`, which patched `HTMLElement.prototype`. `flame.page.js` uses `querySelectorAll` instead.
