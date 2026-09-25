@@ -46,7 +46,7 @@ Flame is an unfinished 2015 prototype. Nothing works end-to-end yet: the snippet
 - [ ] Replace `getElementsByAttribute` with `querySelector('[attr="value"]')`.
 - [ ] Add indexes on domain + time.
 - [ ] Drop the Flash, Java, QuickTime and Silverlight columns and detection.
-- [ ] Delete `_flame/platform.js`, `_flame/session.js` and their `.min.js` copies. They are identical to the `lib.*` files, which are the only ones loaded.
+- [x] Delete `_flame/platform.js`, `_flame/session.js` and their `.min.js` copies. They are identical to the `lib.*` files, which are the only ones loaded.
 - [ ] README links to `SETUP.md`, which doesn't exist.
 - [ ] README "Results for Subscriptions" section is empty.
 - [ ] Add a build step (e.g. terser) for `.min.js` files. They are currently committed by hand.
