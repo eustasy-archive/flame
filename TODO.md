@@ -17,8 +17,6 @@ Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` 
 - [ ] Implement `PUT /track`, writing one Analytics Engine data point per call.
 - [ ] Only accept `/track` and `/trending` for domains in an allowlist (`ALLOWED_DOMAINS`).
 - [ ] In `/track`, ignore requests that carry `Sec-GPC: 1` or `DNT: 1`. That also catches older client scripts.
-- [ ] Take location from `request.cf` (country, region, city, timezone). No GeoIP database is needed, and IP addresses aren't stored.
-- [ ] Fall back to the `Accept-Language` header when the client sends no language.
 - [ ] Add CORS headers to `/track` and `/trending`, since other sites call them.
 - [ ] Implement `GET /trending` through the Analytics Engine SQL API, including the range limits in the README.
 - [ ] Support `format=xml` in `/trending`.
@@ -26,7 +24,6 @@ Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` 
 
 ## Analytics Engine (`sql/`)
 
-- [ ] Replace the MariaDB dumps with the Analytics Engine data point layout: which blob and double holds each field, with the domain as the index (the sampling key). Timestamps are added automatically, and there are no row ids.
 - [ ] Keep the `/trending` queries as `.sql` files the Worker loads.
 - [ ] Never paste request values into SQL. The SQL API has no parameters and doesn't document string escaping.
 
@@ -64,3 +61,6 @@ Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` 
 - [x] The client collects, stores and sends nothing when Global Privacy Control or Do Not Track is on, unless a site sets `honor-privacy-signals` to `false`. That setting replaces `dnt-honor`, and unknown settings are logged.
 - [x] `flame('setting', 'session', false)` leaves out the session, so nothing is kept in localStorage. Sites can turn it back on once they have consent: in the EU, storing it generally needs consent, since analytics isn't strictly necessary. Phone/tablet detection moved to `flame.device.js`, so it still works without a session.
 - [x] The browser's name and version come from User-Agent Client Hints where they're available, so Brave and Edge aren't reported as Chrome. Only the low-entropy brands are read. The OS still comes from Platform.js, since its version is a high-entropy hint.
+- [x] The Analytics Engine data point layout is in `server/src/datapoint.ts` and documented in `sql/README.md`, replacing the MariaDB dumps (and with them, the settings table). The index is the page's domain. Long values are cut to a byte limit per field, so a data point always fits in 16 KB.
+- [x] Country, region and city come from `request.cf`. No GeoIP database is needed, and IP addresses aren't stored.
+- [x] Language falls back to the `Accept-Language` header when the client sends none.
