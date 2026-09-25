@@ -14,6 +14,8 @@ Everything planned is written and tested locally, but it hasn't run against a re
 
 - [ ] Deploy it, and check `/trending`'s queries against a real dataset. They've only been tested against a stand-in for the SQL API, so the details taken from Cloudflare's docs haven't been checked: `argMax(…, timestamp)`, `lower(hex(…))`, `position(… IN lowerUTF8(…))`, and counts arriving as strings.
 - [ ] Replace `flame.example.com` in the snippets with the Worker's hostname, and set `ALLOWED_DOMAINS` and `CF_ACCOUNT_ID` in `wrangler.jsonc`.
+- [ ] Cache `/trending` in the Worker with the Cache API, so repeat requests don't reach the SQL API. Each request makes two SQL API queries, and Cloudflare's API allows 1,200 requests per 5 minutes per user, then blocks all of that user's API calls for 5 minutes. That's 600 uncached `/trending` requests per 5 minutes. Workers Free also only includes 10,000 read queries a day. Browsers cache it for a minute, but that doesn't help across visitors.
+- [ ] Consider an account-owned API token for `CF_API_TOKEN`, if Cloudflare counts those separately from a user's rate limit. The docs don't say.
 
 ## Waiting on others
 
@@ -22,7 +24,6 @@ Everything planned is written and tested locally, but it hasn't run against a re
 ## Ideas
 
 - [ ] Rate-limit `/track`, e.g. with Workers' Rate Limiting binding. The allowlist stops other sites' pages sending data, but not scripts that fake it.
-- [ ] Cache `/trending` in the Worker with the Cache API, so pages don't each query the SQL API. Browsers already cache it for a minute.
 
 ## Done
 
@@ -58,7 +59,7 @@ Everything planned is written and tested locally, but it hasn't run against a re
 - [x] `/track` only stores data for pages on domains in `ALLOWED_DOMAINS` (a `wrangler.jsonc` var, with `*.` for subdomains), and rejects requests whose `Origin` isn't allowed. Nothing is allowed if it's empty.
 - [x] `/track` stores nothing for requests with `Sec-GPC: 1` or `DNT: 1`, answering with a 204 as if it had.
 - [x] `/track` and `/trending` answer CORS preflights and let pages on allowed sites read their responses. Other sites get no CORS headers.
-- [x] `GET /trending` ranks pageviews, or sums payments and subscriptions by category, through the Analytics Engine SQL API. It applies the README's limits (28 days at most, and fewer results for longer ranges), counts with `_sample_interval`, and only answers for allowed domains. It needs `CF_ACCOUNT_ID` and a `CF_API_TOKEN` secret.
+- [x] `GET /trending` ranks pageviews, or sums payments and subscriptions by category, through the Analytics Engine SQL API. It limits requests to 90 days and 100 results, counts with `_sample_interval`, and only answers for allowed domains. It needs `CF_ACCOUNT_ID` and a `CF_API_TOKEN` secret.
 - [x] The `/trending` queries are `.sql` templates in `sql/`, which the Worker imports as text. Request values never go into them as they are: only checked types, integers and allowlisted hostnames, with categories compared as hex.
 - [x] `/trending?format=xml` returns the same response as XML, errors included. Pages are `<result>` elements, and categories are `<category name="…">`.
 - [x] `/trending?terms=["fire","hose"]` only ranks pages whose title or URL contains one of the words, ignoring case. Words can only have letters, numbers, spaces, hyphens and underscores, since they go into SQL.
@@ -68,3 +69,4 @@ Everything planned is written and tested locally, but it hasn't run against a re
 - [x] Dependabot updates GitHub Actions and npm daily, grouping minor and patch updates, and assigns lewisgoddard.
 - [x] Node.js compatibility, on by default from the 2026-08-04 compatibility date, is turned off. Flame only uses web APIs.
 - [x] The snippet is `client/snippet.js`, with `snippet.min.js` to paste, which the root and client READMEs include. `index.html` and `index.min.html` are gone: their example calls are in the client README.
+- [x] `/trending` allows 90 days and 100 results for any request, replacing the 2015 limits (28 days, and fewer results for longer ranges). Analytics Engine keeps three months, and a query costs the same whatever its range or size.

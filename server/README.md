@@ -88,8 +88,8 @@ GET /trending?domain=blog.example.com&range=86400&count=5
 |---|---|---|---|
 | domain | String | _required_ | The domain to rank pages for, e.g. `blog.example.com`. It must be in `ALLOWED_DOMAINS`. The client defaults it to the page's domain. |
 | type | String | `pageview` | `pageview`, `payment` or `subscription`. |
-| count | Integer | `10` | How many results to return. `__MAX__` for the most allowed for the range. See [Limits](#limits). |
-| range | Integer | `3600` | How many seconds back to look. `__MAX__` for 28 days. See [Limits](#limits). |
+| count | Integer | `10` | How many results to return, up to 100. `__MAX__` for 100. |
+| range | Integer | `3600` | How many seconds back to look, up to 90 days (7776000). `__MAX__` for 90 days. |
 | format | String | `json` | `json` or `xml`. |
 | category | String | _none_ | Only count this category. If empty or `false`, categories are ignored. If `__ALL__`, pageviews are ranked per category, and payments and subscriptions are given for each category as well as all together. |
 | terms | String | _none_ | A JSON list of up to 10 words, like `["fire","hose"]`. Only pages whose title or URL contains one of them are ranked, ignoring case. Words can only have letters, numbers, spaces, hyphens and underscores. Pageviews only. |
@@ -99,7 +99,7 @@ GET /trending?domain=blog.example.com&range=86400&count=5
 | Key | Type | Description |
 |---|---|---|
 | success | Boolean | `false` if there was an error. Warnings don't count. |
-| warning | String or `false` | Why the request was changed, e.g. a range that was too long being cut to 28 days. |
+| warning | String or `false` | Why the request was changed, e.g. a range that was too long being cut to 90 days. |
 | error | String or `false` | What went wrong. |
 | count | Integer | How many results there are, not counting `__ALL__`. May be fewer than asked for. |
 | results | Array or Object | Pages for pageviews; categories for payments and subscriptions. |
@@ -180,13 +180,15 @@ GET /trending?domain=blog.example.com&type=payment&range=__MAX__&category=__ALL_
 
 #### Limits
 
-Requests can't look back more than 28 days, and the longer the range, the fewer results they can return. Anything over the limit is cut to it, with a warning.
+A request can look back up to 90 days, since Analytics Engine keeps data for three months, and return up to 100 results. Anything over is cut to the limit, with a warning.
 
-| Range | Seconds | Most results |
-|---|---|---|
-| Up to 1 hour | 3600 | 100 |
-| Up to 1 day | 86400 | 50 |
-| Up to 1 week | 604800 | 20 |
-| Up to 28 days | 2419200 | 10 |
+Counts come from Analytics Engine, which samples data at high volume, so large counts are estimates. Longer ranges are sampled more heavily.
 
-Counts come from Analytics Engine, which samples data at high volume, so large counts are estimates.
+#### SQL API limits
+
+Each `/trending` request makes two queries to Analytics Engine's SQL API: one for the results, and one for the totals behind the percentages. The range and number of results don't change what a query costs.
+
+- **Rate:** Cloudflare's API allows [1,200 requests per 5 minutes per user](https://developers.cloudflare.com/fundamentals/api/reference/limits/), counting everything that user does through the API and dashboard, not just Flame. That's at most 600 `/trending` requests per 5 minutes. Going over returns a 429 and blocks *all* of that user's API calls for 5 minutes, which Flame reports as a 502.
+- **Cost:** Workers Free includes [10,000 read queries a day](https://developers.cloudflare.com/analytics/analytics-engine/pricing/), so 5,000 `/trending` requests. Workers Paid includes 1 million a month, then $1 per million. Cloudflare doesn't bill for Analytics Engine yet.
+
+Browsers cache `/trending` for a minute, but every visitor's first request still reaches the SQL API. A site showing trending pages on every page view will reach the rate limit quickly, so the Worker should cache results too: see [TODO.md](../TODO.md).

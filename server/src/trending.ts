@@ -9,8 +9,9 @@ import { xml } from './xml';
 const Types = ['pageview', 'payment', 'subscription'] as const;
 type Type = (typeof Types)[number];
 
-// Analytics Engine keeps three months, but the README limits requests to 28 days.
-const MaxRange = 28 * 24 * 60 * 60;
+// Analytics Engine keeps data for three months.
+const MaxRange = 90 * 24 * 60 * 60;
+const MaxCount = 100;
 
 export type Parameters = {
 	type: Type;
@@ -25,20 +26,6 @@ export type Parameters = {
 };
 
 type Format = 'json' | 'xml';
-
-// The most results for a range, from the README's limits table.
-export function maxCount(range: number): number {
-	if (range <= 3600) {
-		return 100;
-	}
-	if (range <= 86400) {
-		return 50;
-	}
-	if (range <= 604800) {
-		return 20;
-	}
-	return 10;
-}
 
 // Read and check GET /trending's query string. Everything that goes into SQL
 // is checked here, or is the category, which only goes in as hex.
@@ -67,17 +54,17 @@ export function parameters(search: URLSearchParams): { error: string; format: Fo
 		return failed('range must be a number of seconds, or __MAX__.');
 	}
 	if (range > MaxRange) {
-		warnings.push(`range can't be more than 28 days (${MaxRange} seconds), so it was cut to that.`);
+		warnings.push(`range can't be more than 90 days (${MaxRange} seconds), so it was cut to that.`);
 		range = MaxRange;
 	}
 
-	let count = whole(search.get('count'), 10, maxCount(range));
+	let count = whole(search.get('count'), 10, MaxCount);
 	if (count === undefined) {
 		return failed('count must be a whole number, or __MAX__.');
 	}
-	if (count > maxCount(range)) {
-		warnings.push(`count can't be more than ${maxCount(range)} for that range, so it was cut to that.`);
-		count = maxCount(range);
+	if (count > MaxCount) {
+		warnings.push(`count can't be more than ${MaxCount}, so it was cut to that.`);
+		count = MaxCount;
 	}
 
 	const terms = words(search.get('terms'));

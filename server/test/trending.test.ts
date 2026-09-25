@@ -1,6 +1,6 @@
 import { env, exports } from 'cloudflare:workers';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { maxCount, trending } from '../src/trending';
+import { trending } from '../src/trending';
 
 // Stands in for the Analytics Engine SQL API, answering each query by its shape.
 function api(rows: { pageviews?: object[]; values?: object[]; total?: object }) {
@@ -117,22 +117,29 @@ describe('/trending', () => {
 			expect(sent(fetch)[0]).toContain("AND lower(hex(blob3)) = '4e657773'\n\tAND (position('fire'");
 		});
 
-		it('takes the most results for a range with __MAX__', async () => {
-			await get('domain=blog.example.com&range=__MAX__&count=__MAX__');
-			expect(sent(fetch)[0]).toContain("INTERVAL '2419200' SECOND");
-			expect(sent(fetch)[0]).toContain('LIMIT 10');
+		it('takes the longest range and most results with __MAX__', async () => {
+			const { body } = await get('domain=blog.example.com&range=__MAX__&count=__MAX__');
+			expect(sent(fetch)[0]).toContain("INTERVAL '7776000' SECOND");
+			expect(sent(fetch)[0]).toContain('LIMIT 100');
+			expect(body.warning).toBe(false);
 		});
 
-		it('cuts a range over 28 days, with a warning', async () => {
+		it('allows the most results over the longest range', async () => {
+			const { body } = await get('domain=blog.example.com&range=7776000&count=100');
+			expect(sent(fetch)[0]).toContain('LIMIT 100');
+			expect(body.warning).toBe(false);
+		});
+
+		it('cuts a range over 90 days, with a warning', async () => {
 			const { body } = await get('domain=blog.example.com&range=9999999');
-			expect(sent(fetch)[0]).toContain("INTERVAL '2419200' SECOND");
-			expect(body.warning).toBe("range can't be more than 28 days (2419200 seconds), so it was cut to that.");
+			expect(sent(fetch)[0]).toContain("INTERVAL '7776000' SECOND");
+			expect(body.warning).toBe("range can't be more than 90 days (7776000 seconds), so it was cut to that.");
 		});
 
-		it('cuts count to the limit for the range, with a warning', async () => {
-			const { body } = await get('domain=blog.example.com&range=86400&count=80');
-			expect(sent(fetch)[0]).toContain('LIMIT 50');
-			expect(body.warning).toBe("count can't be more than 50 for that range, so it was cut to that.");
+		it('cuts count to 100, with a warning', async () => {
+			const { body } = await get('domain=blog.example.com&count=150');
+			expect(sent(fetch)[0]).toContain('LIMIT 100');
+			expect(body.warning).toBe("count can't be more than 100, so it was cut to that.");
 		});
 	});
 
@@ -281,19 +288,5 @@ describe('/trending', () => {
 	it('only takes GET', async () => {
 		const response = await exports.default.fetch('https://flame.example.com/trending?domain=blog.example.com', { method: 'POST' });
 		expect(response.status).toBe(405);
-	});
-});
-
-describe('maxCount', () => {
-	it.each([
-		[60, 100],
-		[3600, 100],
-		[3601, 50],
-		[86400, 50],
-		[604800, 20],
-		[604801, 10],
-		[2419200, 10],
-	])('allows %i seconds %i results', (range, max) => {
-		expect(maxCount(range)).toBe(max);
 	});
 });
