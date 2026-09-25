@@ -16,6 +16,7 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 - [ ] Serve the client bundle at one stable URL. Build it from `client/` at deploy time instead of joining files on every request. `?verbose` serves the unminified build.
 - [ ] Decide whether `/inline` is still needed. The snippet is meant to be pasted into pages, not fetched.
 - [ ] Implement `PUT /track`.
+- [ ] In `/track`, ignore requests that carry `Sec-GPC: 1` or `DNT: 1`. That also catches older client scripts.
 - [ ] Implement `GET /trending`, including the range limits in the README.
 - [ ] Take location from `request.cf` (country, region, city). No GeoIP database is needed. If the client IP is needed at all, use `CF-Connecting-IP`.
 - [ ] Fall back to the `Accept-Language` header when the client sends no language.
@@ -33,16 +34,19 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 - [ ] Add location columns (country, region, city) for the `request.cf` data.
 - [ ] Store `title`, `image` and `description`, which `/trending` documents but no table holds.
 - [ ] Add indexes on domain + time.
+- [ ] In `Settings`, rename `dnt-honor` to `honor-privacy-signals` (default `true`), and update the `flame('setting', 'dnt-honor', true)` examples. Drop `dnt-honor-ie9`, which only existed because IE9 sent Do Not Track by default.
 
 ## Client (`client/`)
 
 ### Broken
 - [ ] Snippets load from three different URLs: `/api/code.js` (`index.html`), `/api/flame/script.js` (`client/flame.inline.js`) and `empty.js` (`index.min.html`). Point them all at the Worker's bundle URL.
+- [ ] `flame.page.js`: the `itemprop` fallbacks often match ordinary elements rather than `<meta>` tags (`<h1 itemprop="name">`, `<img itemprop="image" src="…">`). Those have no `content` attribute, so the value comes out as `null`, and the title never falls back to `document.title`. Read `textContent` or `src` for them.
 
 ### To do
 - [ ] Consume the command queue. The queue function's name is in `window.flm` (`flame` by default), and its calls are in `.q`.
 - [ ] Send collected data to `/track` (`navigator.sendBeacon` / `fetch`).
-- [ ] Honour Do Not Track. The `dnt-honor` setting exists, but nothing reads `navigator.doNotTrack`.
+- [ ] Honour privacy signals. If `navigator.globalPrivacyControl === true` or `navigator.doNotTrack === '1'`, collect and send nothing, and check before `flame.session.js` writes to localStorage. Global Privacy Control replaces Do Not Track, which is deprecated (Firefox removed it in 135) but still sent by Chrome.
+- [ ] Check whether the session ID that `flame.session.js` keeps in localStorage needs consent in the EU. Privacy signals don't cover that.
 - [ ] Add a build step (e.g. esbuild) that bundles and minifies `client/`, replacing the hand-committed `.min.js` files.
 - [ ] Wrap client code in an IIFE. It currently leaks `flame_*` globals and patches `HTMLElement.prototype` on host sites.
 - [ ] Replace `getElementsByAttribute` with `querySelector('[attr="value"]')`.
