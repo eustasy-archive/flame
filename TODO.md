@@ -17,9 +17,9 @@ Flame is an unfinished 2015 prototype. Nothing works end-to-end yet: the snippet
 
 ### Client scripts (`_flame/`)
 - [ ] `flame.page.js:23` and `:35` call `getAttribute('content')` without assigning the result, so description and image are DOM elements, not strings.
-- [ ] `flame.language.js:2` falls back to `session.locale.lang`, but `window.session` is filled asynchronously and may not exist (ReferenceError).
-- [ ] `lib.session.js:23` enables `gapi_location` by default, which loads Google `jsapi` for the long-dead `google.loader.ClientLocation`. That's a wasted request on every pageview.
-- [ ] `lib.session.js:361` requests ipinfodb over `http://`, which is blocked as mixed content on HTTPS pages.
+- [x] `flame.language.js:2` falls back to `session.locale.lang`, but `window.session` is filled asynchronously and may not exist (ReferenceError).
+- [x] `lib.session.js:23` enables `gapi_location` by default, which loads Google `jsapi` for the long-dead `google.loader.ClientLocation`. That's a wasted request on every pageview.
+- [x] `lib.session.js:361` requests ipinfodb over `http://`, which is blocked as mixed content on HTTPS pages.
 
 ### Schema (`_sql/`)
 - [ ] `Pageviews` and `Events` have no timestamp column, so trending over a time range can't be queried.
@@ -42,10 +42,10 @@ Flame is an unfinished 2015 prototype. Nothing works end-to-end yet: the snippet
 - [ ] Honour Do Not Track. The `dnt-honor` setting exists, but nothing reads `navigator.doNotTrack`.
 
 ### Hygiene
-- [ ] Wrap client code in an IIFE. It currently leaks `flame_*` globals and patches `HTMLElement.prototype` / `Date.prototype` on host sites.
+- [ ] Wrap client code in an IIFE. It currently leaks `flame_*` globals and patches `HTMLElement.prototype` on host sites.
 - [ ] Replace `getElementsByAttribute` with `querySelector('[attr="value"]')`.
 - [ ] Add indexes on domain + time.
-- [ ] Drop the Flash, Java, QuickTime and Silverlight columns and detection.
+- [ ] Drop the Flash, Java, QuickTime and Silverlight columns. Detection went with session.js.
 - [x] Delete `_flame/platform.js`, `_flame/session.js` and their `.min.js` copies. They are identical to the `lib.*` files, which are the only ones loaded.
 - [ ] README links to `SETUP.md`, which doesn't exist.
 - [ ] README "Results for Subscriptions" section is empty.
@@ -55,4 +55,5 @@ Flame is an unfinished 2015 prototype. Nothing works end-to-end yet: the snippet
 
 - [x] **Platform.js** 1.3.0 → 1.3.6 (`_flame/lib.platform.js` + `.min.js`).
 - [ ] User-agent strings are now frozen. Consider also reading `navigator.userAgentData` (User-Agent Client Hints).
-- [ ] **session.js** 0.4.1 is abandoned upstream. Replace it rather than update: its location and plugin detection is dead. Do location server-side with MaxMind GeoLite2 instead of PECL `geoip`.
+- [x] **session.js** 0.4.1 is abandoned upstream. Replaced with `_flame/flame.session.js`, dropping its dead location and plugin detection.
+- [ ] Do location server-side with MaxMind GeoLite2 instead of PECL `geoip`.

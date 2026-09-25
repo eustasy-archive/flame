@@ -13,12 +13,14 @@ console.log(window.extinguisher.q);
 
 ##### Operating System (Version) & Browser & Browser Version & Rendering Engine
 platform.js
-##### Session & Referrer & Search & Mobile & Visits (New User) & Plugins & Timezone
-session.js
+##### Session & Referrer & Search & Mobile & Visits (New User)
+flame.session.js
+##### Timezone
+flame.timezone.js
 ##### Screen Resolution & Orientation & Depth & Viewport
 `screen.height & screen.width & screen.orientation.angle & screen.orientation.type & screen.colorDepth & screen.availHeight & screen.availWidth`
 ##### Language
-`navigator.languages ? navigator.languages[0] : ( navigator.userLanguage || navigator.systemLanguage || navigator.browserLanguage || navigator.language || session.locale.lang || false )`
+`navigator.languages ? navigator.languages[0] : ( navigator.userLanguage || navigator.systemLanguage || navigator.browserLanguage || navigator.language || false )`
 `$_SERVER['HTTP_ACCEPT_LANGUAGE']`
 ##### Request
 `location`

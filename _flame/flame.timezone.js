@@ -1,12 +1,8 @@
 ////	Timezone and Daylight-Savings-Time Detection
-var d = new Date()
-Date.prototype.stdTimezoneOffset = function() {
-	var jan = new Date(this.getFullYear(), 0, 1)
-	var jul = new Date(this.getFullYear(), 6, 1)
-	return Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset())
-}
-Date.prototype.dst = function() {
-	return this.getTimezoneOffset() < this.stdTimezoneOffset()
-}
-var flame_timezone_offset = (d.getTimezoneOffset()/-60) // 1 / -2.5
-var flame_timezone_dst = d.dst() // true / false
+var flame_timezone_offset = ( new Date().getTimezoneOffset() / -60 ); // 1 / -2.5
+var flame_timezone_dst = (function() {
+	var Now = new Date();
+	var January = new Date(Now.getFullYear(), 0, 1).getTimezoneOffset();
+	var July = new Date(Now.getFullYear(), 6, 1).getTimezoneOffset();
+	return Now.getTimezoneOffset() < Math.max(January, July);
+})(); // true / false

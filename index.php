@@ -44,15 +44,14 @@ if ( 'script' == substr($Request, 0, 6) ) {
 
 	// TODO Settings
 
-	$Scripts[] = file_get_contents(__DIR__.'/_flame/lib.session'.$Suffix['JS']);
 	$Scripts[] = file_get_contents(__DIR__.'/_flame/lib.platform'.$Suffix['JS']);
 
 	// TODO Use suffix
 	$Scripts[] = file_get_contents(__DIR__.'/_flame/function.getElementsByAttribute.js');//.$Suffix['JS']);
+	$Scripts[] = file_get_contents(__DIR__.'/_flame/flame.session.js');//.$Suffix['JS']);
 	$Scripts[] = file_get_contents(__DIR__.'/_flame/flame.language.js');//.$Suffix['JS']);
 	$Scripts[] = file_get_contents(__DIR__.'/_flame/flame.page.js');//.$Suffix['JS']);
-	// Timezone is handled by Session.js
-	// $Scripts[] = file_get_contents(__DIR__.'/_flame/flame.timezone.js');//.$Suffix['JS']);
+	$Scripts[] = file_get_contents(__DIR__.'/_flame/flame.timezone.js');//.$Suffix['JS']);
 	$Scripts[] = file_get_contents(__DIR__.'/_flame/flame.processor.js');//.$Suffix['JS']);
 
 	foreach ( $Scripts as $Script ) {
