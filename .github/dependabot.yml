@@ -28,3 +28,9 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # @cloudflare/vitest-plugin only supports Vitest 4 (its peer range is
+      # ^4.1.0), so Vitest 5 won't install. Remove this once it supports 5.
+      - dependency-name: "vitest"
+        update-types:
+          - "version-update:semver-major"

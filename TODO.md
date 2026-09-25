@@ -15,6 +15,10 @@ Everything planned is written and tested locally, but it hasn't run against a re
 - [ ] Deploy it, and check `/trending`'s queries against a real dataset. They've only been tested against a stand-in for the SQL API, so the details taken from Cloudflare's docs haven't been checked: `argMax(…, timestamp)`, `lower(hex(…))`, `position(… IN lowerUTF8(…))`, and counts arriving as strings.
 - [ ] Replace `flame.example.com` in the snippets with the Worker's hostname, and set `ALLOWED_DOMAINS` and `CF_ACCOUNT_ID` in `wrangler.jsonc`.
 
+## Waiting on others
+
+- [ ] Remove the Vitest major-version `ignore` from `.github/dependabot.yml` once `@cloudflare/vitest-plugin` supports Vitest 5. Its peer range is `^4.1.0` as of 1.2.8, so Dependabot's Vitest 5 update ([#1](https://github.com/eustasy-archive/flame/pull/1)) can't install.
+
 ## Ideas
 
 - [ ] Rate-limit `/track`, e.g. with Workers' Rate Limiting binding. The allowlist stops other sites' pages sending data, but not scripts that fake it.
