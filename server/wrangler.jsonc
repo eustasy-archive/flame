@@ -10,6 +10,12 @@
 	"build": {
 		"command": "npm run build"
 	},
+	"vars": {
+		// Hostnames that may send data to /track and read /trending, separated by
+		// commas. "*.example.com" matches any subdomain of example.com, but not
+		// example.com itself. Nothing is allowed if this is empty.
+		"ALLOWED_DOMAINS": "example.com, *.example.com"
+	},
 	// Pageviews and events. See sql/README.md for the layout.
 	"analytics_engine_datasets": [
 		{

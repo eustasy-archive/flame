@@ -59,6 +59,24 @@ describe('/track', () => {
 		expect(write).not.toHaveBeenCalled();
 	});
 
+	it("rejects domains that aren't allowed", async () => {
+		const response = await post(JSON.stringify({ ...pageview, url: 'https://evil.net/' }));
+		expect(response.status).toBe(403);
+		expect((await response.json<{ error: string }>()).error).toBe("evil.net isn't allowed to send data.");
+		expect(write).not.toHaveBeenCalled();
+	});
+
+	it("rejects pages on sites that aren't allowed", async () => {
+		const response = await post(JSON.stringify(pageview), { headers: { Origin: 'https://evil.net' } });
+		expect(response.status).toBe(403);
+		expect(write).not.toHaveBeenCalled();
+	});
+
+	it('accepts pages on allowed sites', async () => {
+		const response = await post(JSON.stringify(pageview), { headers: { Origin: 'https://blog.example.com' } });
+		expect(response.status).toBe(204);
+	});
+
 	it('only takes PUT and POST', async () => {
 		const response = await exports.default.fetch('https://flame.example.com/track');
 		expect(response.status).toBe(405);

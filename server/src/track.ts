@@ -1,3 +1,4 @@
+import { allowed, allowedOrigin } from './allowed';
 import { parse } from './datapoint';
 import { failure } from './respond';
 
@@ -7,6 +8,9 @@ const MaxBytes = 64 * 1024;
 // PUT or POST /track: store one pageview or event.
 // The client sends JSON as text/plain, to avoid a CORS preflight.
 export async function track(request: Request, env: Env): Promise<Response> {
+	if (!allowedOrigin(request, env)) {
+		return failure(403, 'This site isn\'t allowed to send data.');
+	}
 	const text = await request.text();
 	if (text.length > MaxBytes) {
 		return failure(413, 'The body is too large.');
@@ -20,6 +24,9 @@ export async function track(request: Request, env: Env): Promise<Response> {
 	const parsed = parse(body, request);
 	if ('error' in parsed) {
 		return failure(400, parsed.error);
+	}
+	if (!allowed(parsed.domain, env)) {
+		return failure(403, `${parsed.domain} isn't allowed to send data.`);
 	}
 	env.FLAME.writeDataPoint(parsed.point);
 	return new Response(null, { status: 204 });
