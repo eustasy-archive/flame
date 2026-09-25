@@ -39,11 +39,10 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 
 ### Broken
 - [ ] Snippets load from three different URLs: `/api/code.js` (`index.html`), `/api/flame/script.js` (`client/flame.inline.js`) and `empty.js` (`index.min.html`). Point them all at the Worker's bundle URL.
-- [ ] The global name differs: `e['sher']` in the unminified snippets, `e['isher']` in the minified ones.
 - [ ] `flame.page.js:23` and `:35` call `getAttribute('content')` without assigning the result, so description and image are DOM elements, not strings.
 
 ### To do
-- [ ] Consume the `flame.q` command queue.
+- [ ] Consume the command queue. The queue function's name is in `window.flm` (`flame` by default), and its calls are in `.q`.
 - [ ] Send collected data to `/track` (`navigator.sendBeacon` / `fetch`).
 - [ ] Honour Do Not Track. The `dnt-honor` setting exists, but nothing reads `navigator.doNotTrack`.
 - [ ] Add a build step (e.g. esbuild) that bundles and minifies `client/`, replacing the hand-committed `.min.js` files.
@@ -64,3 +63,4 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 - [x] Removed the PECL `geoip` lookup, which broke the script response.
 - [x] Fixed the README link to a `SETUP.md` that doesn't exist.
 - [x] Renamed the snippet's global function from `extinguisher()` to `flame()`.
+- [x] Snippets store the queue function's name in `window.flm`. It was `sher` in the unminified snippets and `isher` in the minified ones.
