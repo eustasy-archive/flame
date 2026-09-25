@@ -32,7 +32,6 @@ Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` 
 
 ## Client (`client/`)
 
-- [ ] Snippets load from three different URLs: `/api/code.js` (`index.html`), `/api/flame/script.js` (`client/flame.inline.js`) and `empty.js` (`index.min.html`). Point them all at the Worker's bundle URL.
 - [ ] Consume the command queue. The queue function's name is in `window.flm` (`flame` by default), and its calls are in `.q`.
 - [ ] Send collected data to `/track` (`navigator.sendBeacon`, falling back to `fetch`).
 - [ ] Honour privacy signals. If `navigator.globalPrivacyControl === true` or `navigator.doNotTrack === '1'`, collect and send nothing. The setting is `honor-privacy-signals` (default `true`), replacing `dnt-honor`.
@@ -64,3 +63,4 @@ Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` 
 - [x] Client tests run in Vitest with jsdom (`client/test/`).
 - [x] The Worker serves the client bundle at `/flame.js` from Workers Static Assets, minified unless `?verbose` is set. `wrangler dev` and `wrangler deploy` build it first. `/inline` is gone.
 - [x] Deleted `index.php`. The Worker replaces it.
+- [x] All four snippets load `https://flame.example.com/flame.js?v=1`, a placeholder for the Worker's hostname, and a test checks they agree.

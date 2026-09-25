@@ -17,11 +17,12 @@
 		u.parentNode.insertBefore(g, u);
 	}
 )
+// Replace flame.example.com with your Worker's hostname.
 (
 	window,                                            // e
 	document,                                          // x
 	'script',                                          // t
-	'https://extinguisher.io/api/flame/script.js?v=1', // i
+	'https://flame.example.com/flame.js?v=1',          // i
 	'flame'                                            // n
 	// New script element                              // g
 	// First script element in document                // u
