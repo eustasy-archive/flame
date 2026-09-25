@@ -26,7 +26,7 @@ console.log(window.flame.q);
 ```
 
 ##### Operating System (Version) & Browser & Browser Version & Rendering Engine
-`client/lib.platform.js` ([Platform.js](https://github.com/bestiejs/platform.js))
+`client/lib.platform.js` ([Platform.js](https://github.com/bestiejs/platform.js)), with the browser's name and version from `client/flame.hints.js` (User-Agent Client Hints) where the browser supports them.
 ##### Session & Referrer & Search & Visits (New User)
 `client/flame.session.js`
 ##### Mobile

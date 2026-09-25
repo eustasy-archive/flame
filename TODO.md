@@ -32,7 +32,6 @@ Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` 
 
 ## Client (`client/`)
 
-- [ ] User-agent strings are now frozen. Also read `navigator.userAgentData` (User-Agent Client Hints) where it's available.
 
 ## Docs
 
@@ -64,3 +63,4 @@ Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` 
 - [x] `flame('track', …)` sends everything collected to `/track` on the server the script came from, with `sendBeacon` (falling back to `fetch`). It's sent as `text/plain`, so there's no CORS preflight.
 - [x] The client collects, stores and sends nothing when Global Privacy Control or Do Not Track is on, unless a site sets `honor-privacy-signals` to `false`. That setting replaces `dnt-honor`, and unknown settings are logged.
 - [x] `flame('setting', 'session', false)` leaves out the session, so nothing is kept in localStorage. Sites can turn it back on once they have consent: in the EU, storing it generally needs consent, since analytics isn't strictly necessary. Phone/tablet detection moved to `flame.device.js`, so it still works without a session.
+- [x] The browser's name and version come from User-Agent Client Hints where they're available, so Brave and Edge aren't reported as Chrome. Only the low-entropy brands are read. The OS still comes from Platform.js, since its version is a high-entropy hint.

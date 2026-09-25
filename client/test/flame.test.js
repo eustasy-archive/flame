@@ -73,6 +73,14 @@ describe('flame()', () => {
 		expect(Sent[1][1].session.id).toBe(Sent[0][1].session.id);
 	});
 
+	it('prefers the browser named in User-Agent Client Hints', async () => {
+		Object.defineProperty(navigator, 'userAgentData', { configurable: true, value: { brands: [ { brand: 'Chromium', version: '140' }, { brand: 'Brave', version: '140' } ] } });
+		load([ [ 'track' ] ]);
+		delete navigator.userAgentData;
+		var [ [ , Payload ] ] = await sent();
+		expect(Payload.browser).toMatchObject({ name: 'Brave', version: '140' });
+	});
+
 	it('uses the name in window.flm', async () => {
 		load([ [ 'track' ] ], 'fl');
 		expect(await sent()).toHaveLength(1);

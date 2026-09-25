@@ -5,6 +5,7 @@ import platform from './lib.platform.js';
 import { cores } from './flame.processor.js';
 import { device } from './flame.device.js';
 import { display } from './flame.display.js';
+import { brand } from './flame.hints.js';
 import { language } from './flame.language.js';
 import { page } from './flame.page.js';
 import { session } from './flame.session.js';
@@ -69,6 +70,7 @@ function collect() {
 	var Display = display();
 	var Page = page();
 	var Session = Settings.session ? currentSession() : false;
+	var Brand = brand();
 	return {
 		url:         location.href.split('#')[0],
 		referrer:    document.referrer,
@@ -83,8 +85,8 @@ function collect() {
 			search:      Session.search
 		},
 		browser: {
-			name:    platform.name || false,
-			version: platform.version || false,
+			name:    Brand ? Brand.name : ( platform.name || false ),
+			version: Brand ? Brand.version : ( platform.version || false ),
 			engine:  platform.layout || false
 		},
 		os:       String( platform.os ),
