@@ -20,8 +20,8 @@ Strings, cut to the byte limit shown.
 
 | Column | Field | Bytes | Notes |
 |---|---|---|---|
-| `blob1` | type | 64 | `pageview`, `payment`, `subscription`, or a custom type such as `event`. |
-| `blob2` | data | 1000 | For pageviews, the page's URL. For payments and subscriptions, the amount. Otherwise whatever the site passed. |
+| `blob1` | type | 64 | `pageview`, `payment`, `subscription`, `404`, `outbound`, `download`, or a custom type such as `event`. |
+| `blob2` | data | 1000 | For pageviews and 404s, the page's URL. For outbound links and downloads, the link's URL. For payments and subscriptions, the amount. Otherwise whatever the site passed. |
 | `blob3` | category | 100 | |
 | `blob4` | url | 1000 | The page's URL, without its fragment. |
 | `blob5` | title | 300 | From `og:title`, microdata, `twitter:title`, or `<title>`. |

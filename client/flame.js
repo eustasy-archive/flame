@@ -1,6 +1,7 @@
 ////	Flame
 // Entry point for the bundle the Worker serves. esbuild wraps it in a function,
 // so nothing here leaks onto the host page.
+import { responseStatus, watchHistory, watchLinks } from './flame.auto.js';
 import { cores } from './flame.processor.js';
 import { device } from './flame.device.js';
 import { display } from './flame.display.js';
@@ -14,7 +15,27 @@ var Server = server();
 
 // Settings for flame('setting', name, value), with their defaults.
 var Settings = {
-	'honor-privacy-signals': true
+	'honor-privacy-signals': true,
+	// Track a pageview each time a single-page app changes the URL.
+	'track-history': false,
+	// The same, but changes to the hash count as new pages too, for apps that
+	// route with it. Pageview URLs then keep their hash.
+	'track-hash': false,
+	// Track clicks on links to other sites, and to files, as 'outbound' and
+	// 'download' events with the link's URL.
+	'track-outbound': false,
+	'track-downloads': false,
+	// Track a '404' event if the page was served as a 404.
+	'track-404': false
+};
+
+// What to start when a setting is turned on. Each starts once.
+var Watchers = {
+	'track-history': watchPages,
+	'track-hash': watchPages,
+	'track-outbound': watchClicks,
+	'track-downloads': watchClicks,
+	'track-404': check404
 };
 
 // Commands for flame('command', …).
@@ -25,6 +46,9 @@ var Commands = {
 			return;
 		}
 		Settings[Name] = Value;
+		if ( Value && Watchers[Name] ) {
+			Watchers[Name]();
+		}
 	},
 	track: track,
 	trending: trending
@@ -52,13 +76,61 @@ function optedOut() {
 	return navigator.globalPrivacyControl === true || navigator.doNotTrack === '1' || window.doNotTrack === '1';
 }
 
+// Run Start the first time it's asked for by Name.
+var Started = {};
+function once(Name, Start) {
+	if ( !Started[Name] ) {
+		Started[Name] = true;
+		Start();
+	}
+}
+
+// This page's URL, without its hash unless the hash is part of the route.
+function pageUrl() {
+	return Settings['track-hash'] ? location.href : location.href.split('#')[0];
+}
+
+var Last_Page;
+function watchPages() {
+	once('pages', function() {
+		Last_Page = pageUrl();
+		watchHistory(function() {
+			// Wait for the app to update the page, such as its title.
+			setTimeout(function() {
+				if ( ( Settings['track-history'] || Settings['track-hash'] ) && pageUrl() != Last_Page ) {
+					Last_Page = pageUrl();
+					track('pageview');
+				}
+			}, 0);
+		});
+	});
+}
+
+function watchClicks() {
+	once('clicks', function() {
+		watchLinks(function(Type, Url) {
+			if ( Settings[Type == 'download' ? 'track-downloads' : 'track-outbound'] ) {
+				track(Type, Url);
+			}
+		});
+	});
+}
+
+function check404() {
+	once('404', function() {
+		if ( responseStatus() == 404 ) {
+			track('404');
+		}
+	});
+}
+
 // Everything collected about this pageview.
 function collect() {
 	var Display = display();
 	var Page = page();
 	var Brand = brand();
 	return {
-		url:         location.href.split('#')[0],
+		url:         pageUrl(),
 		referrer:    document.referrer,
 		title:       Page.title,
 		description: Page.description,
@@ -76,7 +148,7 @@ function collect() {
 }
 
 // flame('track', type, data, category)
-// Pageviews default their data to the page's URL. Payments and subscriptions
+// Pageviews and 404s default their data to the page's URL. Payments and subscriptions
 // take an amount as their data, as an integer (e.g. pence) rather than a float.
 function track(Type, Data, Category) {
 	var Payload;
@@ -87,7 +159,7 @@ function track(Type, Data, Category) {
 	Payload = collect();
 	Payload.type = String( Type || 'pageview' );
 	if ( Data === undefined || Data === null ) {
-		Data = Payload.type == 'pageview' ? Payload.url : '';
+		Data = ( Payload.type == 'pageview' || Payload.type == '404' ) ? Payload.url : '';
 	}
 	Payload.data = String( Data );
 	Payload.category = Category ? String( Category ) : '';

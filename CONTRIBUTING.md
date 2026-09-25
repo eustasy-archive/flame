@@ -51,6 +51,7 @@ Run these in `server/`.
 | File | Contents |
 |---|---|
 | `flame.js` | The entry point. It runs the snippet's queue and each command, and sends data. |
+| `flame.auto.js` | The watchers behind [automatic tracking](client/README.md#automatic-tracking): history, link clicks and the page's status. |
 | `flame.*.js` | One collector each. The [client README](client/README.md#whats-collected) lists what each collects. |
 | `snippet.js`, `snippet.min.js` | The snippet, readable and minified. |
 | `test/` | Tests, run in Vitest with jsdom. |
@@ -90,6 +91,7 @@ The `/trending` query templates, and [the data point layout](sql/README.md).
   - Since `client/` has no `package.json`, the tests use Vitest's globals (`describe`, `it`, `expect`, `vi`) instead of importing them.
   - `setup.js` swaps Node's own `localStorage` for jsdom's.
   - The bundle, snippet and `flame()` tests run the built bundle, as a browser would, which is why `npm test` builds first.
+  - The automatic tracking tests give each test a fresh jsdom window, since the bundle adds listeners that would otherwise fire in later tests.
   - A test also checks that the snippet in each README matches `snippet.min.js`.
 
 ## Making changes

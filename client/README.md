@@ -38,15 +38,20 @@ Sends one pageview or event to `/track`, along with everything [collected](#what
 
 | Argument | Default | Description |
 |---|---|---|
-| type | `pageview` | `pageview`, `payment`, `subscription`, or a type of your own, such as `event`. |
-| data | The page's URL, for pageviews | What's being tracked. Pageviews default to the page's URL without its fragment. For payments and subscriptions, it's the amount, as an integer (e.g. pence) rather than a float. |
+| type | `pageview` | `pageview`, `payment`, `subscription`, `404`, or a type of your own, such as `event`. [Automatic tracking](#automatic-tracking) also sends `outbound` and `download`. |
+| data | The page's URL, for pageviews and 404s | What's being tracked. Pageviews and 404s default to the page's URL, without its hash unless `track-hash` is on. For payments and subscriptions, it's the amount, as an integer (e.g. pence) rather than a float. |
 | category | _none_ | A category to group data by. |
 
 ### flame('setting', name, value)
 
 | Setting | Default | Description |
 |---|---|---|
-| `honor-privacy-signals` | `true` | Collect, store and send nothing when the browser has [Global Privacy Control](https://globalprivacycontrol.org/) or Do Not Track turned on. |
+| `honor-privacy-signals` | `true` | Collect, store and send nothing when the browser has [Global Privacy Control](https://globalprivacycontrol.org/) or Do Not Track turned on. This includes automatic tracking. |
+| `track-history` | `false` | Track a pageview each time a single-page app changes the URL. See [automatic tracking](#automatic-tracking). |
+| `track-hash` | `false` | As `track-history`, but changes to the hash count as new pages too. |
+| `track-outbound` | `false` | Track clicks on links to other sites. |
+| `track-downloads` | `false` | Track clicks on links to files. |
+| `track-404` | `false` | Track a `404` if the page was served as one. |
 
 Settings apply to calls made after them, so put them first.
 
@@ -61,6 +66,26 @@ flame('trending', { type: 'pageview', count: 5, range: 86400, terms: ['fire', 'h
 	});
 });
 ```
+
+## Automatic tracking
+
+Each of these is off until a setting turns it on. Put the settings before your first `track` call:
+
+```js
+flame('setting', 'track-history', true);
+flame('setting', 'track-outbound', true);
+flame('setting', 'track-downloads', true);
+flame('setting', 'track-404', true);
+flame('track', 'pageview');
+```
+
+- **`track-history`:** single-page apps change the URL without loading a new page. With this on, Flame tracks a pageview whenever the URL changes, through `history.pushState` or the back and forward buttons. Changes to the hash alone don't count, and nor does going to the URL the page is already on. It waits a moment first, so the app can update the page's title.
+- **`track-hash`:** for apps that route with the hash, such as `/app#/settings`. Hash changes count as new pages, and pageview URLs keep their hash. It includes `track-history`.
+- **`track-outbound`:** clicks on links to other sites, as `outbound` events with the link's URL as their data. Middle clicks count, since they open a new tab.
+- **`track-downloads`:** clicks on links to files, as `download` events with the link's URL, wherever the file is. A link counts if it has a `download` attribute, or ends in a file extension such as `.pdf`, `.zip`, `.docx`, `.csv` or `.mp4`.
+- **`track-404`:** tracks a `404` event, with the page's URL as its data, if the page was served with a 404 status. Browsers only tell pages their status in Chrome and Edge (109 and later) and Firefox (129 and later). For Safari, call `flame('track', '404')` on your 404 page as well.
+
+Flame uses `sendBeacon`, so a click that leaves the page is still sent.
 
 ## What's collected
 

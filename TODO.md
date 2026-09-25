@@ -28,8 +28,7 @@ Lower priority, mostly from comparing Flame with [Plausible](https://github.com/
 - [ ] **Stats API:** visitors, pageviews, bounce rate, visit duration and views per visit, over time. Break them down by page, entry and exit page, referrer, country, region and city, browser, OS, device, screen size and language. Flame already stores most of these, so it's mostly new `.sql` templates.
 - [ ] **Dashboard** on top of the stats API, with shared links and embedding. It needs authentication, which Flame doesn't have.
 - [ ] **Campaigns:** split `utm_*` parameters out of the URL in `/track`, since Analytics Engine's SQL has no documented URL functions, and group traffic into channels. All 20 blobs are in use, so something has to make room.
-- [ ] **Single-page apps:** track a pageview on `pushState`, back and forward, and hash changes, instead of needing a `track` call for each.
-- [ ] **Codeless events:** outbound link clicks, file downloads, form submissions and 404 pages.
+- [ ] **Form submissions:** track them without code, as outbound links and downloads are.
 - [ ] **Engagement:** scroll depth and time on page, sent when the page is hidden, for bounce rate and visit duration. 7 doubles are free.
 - [ ] **Custom properties:** key/value pairs on events, beyond `data` and `category`.
 - [ ] **Goals and conversion rates.**
