@@ -1,6 +1,7 @@
 import { allowed, allowedOrigin } from './allowed';
-import { parse } from './datapoint';
+import { parse, withVisitor } from './datapoint';
 import { failure } from './respond';
+import { visitor } from './visitor';
 
 // Bodies are small JSON objects; anything much bigger isn't from the client.
 const MaxBytes = 64 * 1024;
@@ -33,6 +34,6 @@ export async function track(request: Request, env: Env): Promise<Response> {
 	if (!allowed(parsed.domain, env)) {
 		return failure(403, `${parsed.domain} isn't allowed to send data.`);
 	}
-	env.FLAME.writeDataPoint(parsed.point);
+	env.FLAME.writeDataPoint(withVisitor(parsed.point, await visitor(request, env, parsed.domain)));
 	return new Response(null, { status: 204 });
 }

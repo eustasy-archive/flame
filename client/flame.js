@@ -7,7 +7,6 @@ import { display } from './flame.display.js';
 import { brand } from './flame.hints.js';
 import { language } from './flame.language.js';
 import { page } from './flame.page.js';
-import { session } from './flame.session.js';
 import { timezone } from './flame.timezone.js';
 
 // Where this script was loaded from, which is also where data is sent.
@@ -15,10 +14,7 @@ var Server = server();
 
 // Settings for flame('setting', name, value), with their defaults.
 var Settings = {
-	'honor-privacy-signals': true,
-	// The session ID is kept in localStorage. Sites that need consent for that
-	// (in the EU, generally) can turn it off until they have it.
-	'session': true
+	'honor-privacy-signals': true
 };
 
 // Commands for flame('command', …).
@@ -56,20 +52,10 @@ function optedOut() {
 	return navigator.globalPrivacyControl === true || navigator.doNotTrack === '1' || window.doNotTrack === '1';
 }
 
-// The session only counts one pageview per page load, however often it's read.
-var Current_Session = null;
-function currentSession() {
-	if ( !Current_Session ) {
-		Current_Session = session();
-	}
-	return Current_Session;
-}
-
 // Everything collected about this pageview.
 function collect() {
 	var Display = display();
 	var Page = page();
-	var Session = Settings.session ? currentSession() : false;
 	var Brand = brand();
 	return {
 		url:         location.href.split('#')[0],
@@ -77,13 +63,6 @@ function collect() {
 		title:       Page.title,
 		description: Page.description,
 		image:       Page.image,
-		session: Session && {
-			id:          Session.id,
-			visits:      Session.visits,
-			pageviews:   Session.pageviews,
-			new_visitor: Session.new_visitor,
-			search:      Session.search
-		},
 		// Only when User-Agent Client Hints name it. Otherwise the server reads
 		// the browser, its engine and the OS from the User-Agent header.
 		browser:  Brand,

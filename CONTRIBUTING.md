@@ -36,7 +36,9 @@ Run these in `server/`.
 2. **`/flame.js`** is `client/flame.js` and everything it imports, bundled by esbuild into one function so it adds nothing to the page. The Worker serves it from Workers Static Assets.
    - When it loads, it runs the queued calls, then replaces `flame()` so later calls run straight away.
    - `flame('track', …)` collects everything about the page and sends it to `/track` with `sendBeacon`.
-3. **`/track`** (`server/src/track.ts`) checks the request against the allowlist and privacy headers. `server/src/datapoint.ts` then lays the body out as an Analytics Engine data point, and the Worker writes it.
+3. **`/track`** (`server/src/track.ts`) checks the request against the allowlist and privacy headers.
+   - `server/src/datapoint.ts` lays the body out as an Analytics Engine data point, adding what the request tells it: the browser and OS, search engine, location and language.
+   - `server/src/visitor.ts` adds a cookie-free visitor ID, then the Worker writes the data point.
 4. **`/trending`** (`server/src/trending.ts`) checks its parameters and the allowlist.
    - It fills in the `.sql` templates in `sql/` and queries Analytics Engine's SQL API (`server/src/analytics.ts`).
    - Workers Cache, in front of the Worker, keeps successful responses for a minute. It follows each response's `Cache-Control` and `Vary` headers, so anything without a `Cache-Control` header is sent with `no-store` (`cacheable()` in `server/src/index.ts`).
@@ -60,6 +62,8 @@ Run these in `server/`.
 | `src/index.ts` | Routing, and `/flame.js`. |
 | `src/track.ts` | `/track`. |
 | `src/datapoint.ts` | The data point layout, and turning a `/track` body into a data point. |
+| `src/visitor.ts` | Cookie-free visitor IDs, with a daily salt kept in the `SALTS` KV namespace. |
+| `src/search.ts` | The search engine and query, from the page's referrer. |
 | `src/useragent.ts` | Reading the browser, its engine and the OS from the `User-Agent` header, with [bowser](https://github.com/bowser-js/bowser). |
 | `src/trending.ts` | `/trending`: checking its parameters and shaping its results. |
 | `src/analytics.ts` | Filling in the `sql/` templates, and querying the SQL API. |
@@ -94,9 +98,9 @@ The `/trending` query templates, and [the data point layout](sql/README.md).
 
 1. Write a collector in `client/flame.<name>.js` that exports a function, and add what it returns to `collect()` in `client/flame.js`.
 2. Store it in `server/src/datapoint.ts`, by adding a name to `Blobs` (strings) or `Doubles` (numbers), and a byte limit to `BlobBytes` for a string.
-   - All 20 blobs are in use, so a new string means replacing one. 13 of the 20 doubles are in use.
+   - All 20 blobs are in use, so a new string means replacing one. 10 of the 20 doubles are in use.
    - Only ever add to the end of these lists. Analytics Engine stores values by position (`blob1`, `double1`…) and data can't be changed once written, so reordering them would change what older data means.
-3. Add it to the tables in `sql/README.md`, in the same position, and to "What's collected" in the client README.
+3. Add it to the tables in `sql/README.md`, in the same position, and to "What's collected" in the client README. A test checks `sql/README.md` matches the layout.
 4. Test it: the collector in `client/test/`, and the layout in `server/test/datapoint.test.ts`.
 
 ### Changing /trending's queries
@@ -121,7 +125,8 @@ The SQL API has no query parameters and doesn't document how quotes in strings a
 The client runs on other people's pages, so it:
 - **never throws:** `run()` in `flame.js` catches and logs errors.
 - **adds no globals:** the bundle is wrapped in a function.
-- **checks privacy settings first:** it looks at `honor-privacy-signals` and `session` before collecting or storing anything.
+- **stores nothing in the browser:** no cookies or localStorage. Visitors are counted by the Worker instead.
+- **checks privacy signals first:** unless `honor-privacy-signals` is off, it collects nothing when Global Privacy Control or Do Not Track is on.
 
 It's written in the style of the original 2015 code: `var` and `function`, tabs, `Title_Case` local variables, and a `////	Name` comment heading each file. esbuild bundles it for ES2017.
 

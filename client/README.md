@@ -23,7 +23,6 @@ It's kept in [`snippet.min.js`](snippet.min.js), with a readable copy in [`snipp
 After the snippet, a page can call any of the [commands](#commands):
 
 ```js
-flame('setting', 'session', false);
 flame('track', 'pageview');
 flame('track', 'payment', 1200, 'Linux');
 flame('trending', { range: 7200 }, function(Trending) {
@@ -43,16 +42,11 @@ Sends one pageview or event to `/track`, along with everything [collected](#what
 | data | The page's URL, for pageviews | What's being tracked. Pageviews default to the page's URL without its fragment. For payments and subscriptions, it's the amount, as an integer (e.g. pence) rather than a float. |
 | category | _none_ | A category to group data by. |
 
-A page only counts as one pageview in its visitor's session, however many times it calls `track`.
-
 ### flame('setting', name, value)
 
 | Setting | Default | Description |
 |---|---|---|
 | `honor-privacy-signals` | `true` | Collect, store and send nothing when the browser has [Global Privacy Control](https://globalprivacycontrol.org/) or Do Not Track turned on. |
-| `session` | `true` | Keep a session ID, visit count and search referrer in localStorage. |
-
-In the EU, storing the session in localStorage generally needs the visitor's consent, since analytics isn't strictly necessary. Privacy signals don't cover that. Until you have consent, set `session` to `false`, then set it back to `true` once you do.
 
 Settings apply to calls made after them, so put them first.
 
@@ -70,10 +64,13 @@ flame('trending', { type: 'pageview', count: 5, range: 86400, terms: ['fire', 'h
 
 ## What's collected
 
+The client stores nothing in the browser: no cookies, and nothing in localStorage. The Worker doesn't store IP addresses or user agents.
+
 | Data | From |
 |---|---|
 | Browser, version, rendering engine, and operating system | The Worker, from the `User-Agent` header, with the browser's name and version from User-Agent Client Hints where the browser has them (`flame.hints.js`) |
-| Session ID, visits in the last 32 days, pageviews this visit, new visitor, search engine and query | `flame.session.js`. A session ends after 30 minutes without a pageview. |
+| Visitor | The Worker. A visitor's ID is a hash of a daily salt, the site's domain, and the visitor's IP address and user agent, [as Plausible counts visitors](https://plausible.io/data-policy). Salts are deleted after their day, so an ID can't be traced back to an IP address, or linked to the same visitor on another day. |
+| Search engine and query | The Worker, from the page's referrer. |
 | Phone or tablet | `flame.device.js` |
 | Page title, description and image | `flame.page.js`, from Open Graph, microdata and Twitter tags |
 | Screen size, colour depth and orientation, and viewport size | `flame.display.js` |

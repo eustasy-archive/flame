@@ -36,6 +36,13 @@
 		"CF_ACCOUNT_ID": "",
 		"ANALYTICS_DATASET": "flame"
 	},
+	// A random salt for each day, for cookie-free visitor IDs (see src/visitor.ts).
+	// Deploying creates the namespace and writes its id here.
+	"kv_namespaces": [
+		{
+			"binding": "SALTS"
+		}
+	],
 	// Pageviews and events. See sql/README.md for the layout.
 	"analytics_engine_datasets": [
 		{

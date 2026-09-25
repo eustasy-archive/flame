@@ -9,13 +9,13 @@ describe('/flame.js', () => {
 		expect(response.headers.get('Cache-Control')).toBe('public, max-age=3600');
 		const body = await response.text();
 		expect(body).toMatch(/^\(\(\)=>\{/);
-		expect(body).not.toContain('function session(');
+		expect(body).not.toContain('function collect(');
 	});
 
 	it('serves the readable bundle with ?verbose', async () => {
 		const response = await exports.default.fetch('https://flame.example.com/flame.js?verbose');
 		expect(response.status).toBe(200);
-		expect(await response.text()).toContain('function session(');
+		expect(await response.text()).toContain('function collect(');
 	});
 
 	it('answers HEAD requests', async () => {

@@ -1,12 +1,12 @@
 import { env, exports } from 'cloudflare:workers';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Blobs } from '../src/datapoint';
 
 const pageview = {
 	type: 'pageview',
 	data: 'https://blog.example.com/post',
 	url: 'https://blog.example.com/post',
 	title: 'A post',
-	session: { id: 'abc123', visits: 1, pageviews: 1, new_visitor: true, search: { engine: false, query: false } },
 };
 
 function post(body: string, init: RequestInit = {}) {
@@ -34,6 +34,18 @@ describe('/track', () => {
 		const point = write.mock.calls[0][0] as AnalyticsEngineDataPoint;
 		expect(point.indexes).toEqual(['blog.example.com']);
 		expect(point.blobs?.slice(0, 5)).toEqual(['pageview', 'https://blog.example.com/post', '', 'https://blog.example.com/post', 'A post']);
+	});
+
+	it('stores a cookie-free visitor ID, and not the IP address', async () => {
+		const headers = { 'Content-Type': 'text/plain', 'CF-Connecting-IP': '203.0.113.7', 'User-Agent': 'Test browser' };
+		await post(JSON.stringify(pageview), { headers });
+		await post(JSON.stringify(pageview), { headers });
+		await post(JSON.stringify(pageview), { headers: { ...headers, 'CF-Connecting-IP': '203.0.113.8' } });
+		const ids = write.mock.calls.map((call: unknown[]) => (call[0] as AnalyticsEngineDataPoint).blobs?.[Blobs.indexOf('visitor')]);
+		expect(ids[0]).toMatch(/^[0-9a-f]{32}$/);
+		expect(ids[1]).toBe(ids[0]);
+		expect(ids[2]).not.toBe(ids[0]);
+		expect(JSON.stringify(write.mock.calls)).not.toContain('203.0.113');
 	});
 
 	it('accepts PUT, as the README documents', async () => {

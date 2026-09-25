@@ -28,9 +28,9 @@ Strings, cut to the byte limit shown.
 | `blob6` | description | 500 | |
 | `blob7` | image | 1000 | |
 | `blob8` | referrer | 1000 | This page's referrer. |
-| `blob9` | search_engine | 100 | From the referrer that started the session, e.g. `Google`, or `Unknown`. |
+| `blob9` | search_engine | 100 | From this page's referrer, e.g. `Google`, or `Unknown`. Empty for links from the same site. |
 | `blob10` | search_query | 300 | Often empty: most search engines no longer pass the query on. |
-| `blob11` | session | 64 | A random ID kept in the visitor's localStorage. Empty if the site turned sessions off. |
+| `blob11` | visitor | 32 | A hash of a daily salt, the domain, and the visitor's IP address and user agent. The same for a visitor all day on one site, and different the next day. Count unique visitors with `count(DISTINCT blob11)`, though it's approximate when data is sampled. |
 | `blob12` | browser | 100 | e.g. `Chrome`, `Firefox`. From User-Agent Client Hints where the browser has them, so Brave and Edge aren't counted as Chrome; otherwise, like the version, engine and OS, from the `User-Agent` header. |
 | `blob13` | browser_version | 64 | |
 | `blob14` | browser_engine | 100 | e.g. `Blink`, `Gecko`. |
@@ -46,18 +46,15 @@ Strings, cut to the byte limit shown.
 | Column | Field | Notes |
 |---|---|---|
 | `double1` | value | The amount of a payment or subscription, as an integer (e.g. pence). Otherwise 0. |
-| `double2` | visits | Visits by this visitor in the last 32 days, including this one. |
-| `double3` | session_pageviews | Pageviews so far in this visit. |
-| `double4` | new_visitor | 1 on a visitor's first visit, otherwise 0. |
-| `double5` | screen_width | |
-| `double6` | screen_height | |
-| `double7` | screen_depth | Colour depth in bits. |
-| `double8` | screen_angle | Orientation angle: 0, 90, 180 or 270. |
-| `double9` | viewport_width | |
-| `double10` | viewport_height | |
-| `double11` | timezone_offset | Hours from UTC, e.g. `1` or `-2.5`. |
-| `double12` | timezone_dst | 1 if daylight saving time is in effect, otherwise 0. |
-| `double13` | cores | The number of CPU cores the browser reports. |
+| `double2` | screen_width | |
+| `double3` | screen_height | |
+| `double4` | screen_depth | Colour depth in bits. |
+| `double5` | screen_angle | Orientation angle: 0, 90, 180 or 270. |
+| `double6` | viewport_width | |
+| `double7` | viewport_height | |
+| `double8` | timezone_offset | Hours from UTC, e.g. `1` or `-2.5`. |
+| `double9` | timezone_dst | 1 if daylight saving time is in effect, otherwise 0. |
+| `double10` | cores | The number of CPU cores the browser reports. |
 
 ## Queries
 

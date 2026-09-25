@@ -9,9 +9,9 @@ describe.each([ 'flame.js', 'flame.min.js' ])('%s', (file) => {
 		localStorage.clear();
 	});
 
-	it('runs without adding globals to the page', () => {
+	it('runs without adding globals to the page, or storing anything', () => {
 		document.head.innerHTML = '<script src="https://flame.example.com/flame.js"></script>';
-		navigator.sendBeacon = () => true;
+		navigator.sendBeacon = vi.fn(() => true);
 		window.flame = function() {
 			( window.flame.q = window.flame.q || [] ).push(arguments);
 		};
@@ -19,7 +19,8 @@ describe.each([ 'flame.js', 'flame.min.js' ])('%s', (file) => {
 		var Before = Object.keys(globalThis);
 		( 0, eval )( readFileSync(join(Build, file), 'utf8') );
 		expect(Object.keys(globalThis)).toEqual(Before);
-		expect(localStorage.getItem('flame_session')).toContain('"visits":1');
+		expect(navigator.sendBeacon).toHaveBeenCalled();
+		expect(localStorage.length).toBe(0);
 		delete window.flame;
 	});
 

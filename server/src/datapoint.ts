@@ -1,3 +1,4 @@
+import { search } from './search';
 import { userAgent } from './useragent';
 
 // How a pageview or event from /track is stored in Workers Analytics Engine.
@@ -16,7 +17,7 @@ export const Blobs = [
 	'referrer',
 	'search_engine',
 	'search_query',
-	'session',
+	'visitor',
 	'browser',
 	'browser_version',
 	'browser_engine',
@@ -31,9 +32,6 @@ export const Blobs = [
 // The doubles (numbers), in order: double1 is 'value', and so on. At most 20.
 export const Doubles = [
 	'value',
-	'visits',
-	'session_pageviews',
-	'new_visitor',
 	'screen_width',
 	'screen_height',
 	'screen_depth',
@@ -60,7 +58,7 @@ export const BlobBytes: Record<Blob, number> = {
 	referrer: 1000,
 	search_engine: 100,
 	search_query: 300,
-	session: 64,
+	visitor: 32,
 	browser: 100,
 	browser_version: 64,
 	browser_engine: 100,
@@ -98,8 +96,7 @@ export function parse(body: unknown, request: Request): Parsed {
 		return { error: 'url must be the page\'s URL.' };
 	}
 
-	const session = object(payload.session);
-	const search = object(session.search);
+	const found = search(payload.referrer, url);
 	const browser = object(payload.browser);
 	const screen = object(payload.screen);
 	const viewport = object(payload.viewport);
@@ -119,9 +116,10 @@ export function parse(body: unknown, request: Request): Parsed {
 		description: payload.description,
 		image: payload.image,
 		referrer: payload.referrer,
-		search_engine: search.engine,
-		search_query: search.query,
-		session: session.id,
+		search_engine: found.engine,
+		search_query: found.query,
+		// Filled in by withVisitor(), once the domain is known to be allowed.
+		visitor: '',
 		browser: brand || agent.browser,
 		browser_version: brand ? browser.version : agent.version,
 		browser_engine: agent.engine,
@@ -134,9 +132,6 @@ export function parse(body: unknown, request: Request): Parsed {
 	};
 	const doubles: Record<Double, unknown> = {
 		value: payload.value,
-		visits: session.visits,
-		session_pageviews: session.pageviews,
-		new_visitor: session.new_visitor,
 		screen_width: screen.width,
 		screen_height: screen.height,
 		screen_depth: screen.depth,
@@ -200,4 +195,11 @@ export function truncate(value: string, bytes: number): string {
 function acceptLanguage(header: string | null): string {
 	const first = (header ?? '').split(',')[0].split(';')[0].trim();
 	return first === '*' ? '' : truncate(first, BlobBytes.language);
+}
+
+// Add the visitor's ID (see visitor.ts) to a data point.
+export function withVisitor(point: AnalyticsEngineDataPoint, id: string): AnalyticsEngineDataPoint {
+	const blobs = [...(point.blobs ?? [])];
+	blobs[Blobs.indexOf('visitor')] = id;
+	return { ...point, blobs };
 }

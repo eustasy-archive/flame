@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { BlobBytes, Blobs, Doubles, parse, truncate } from '../src/datapoint';
+import readme from '../../sql/README.md?raw';
+import { BlobBytes, Blobs, Doubles, parse, truncate, withVisitor } from '../src/datapoint';
 
 // What the client sends for a pageview.
 const pageview = {
@@ -8,11 +9,10 @@ const pageview = {
 	category: 'Updates',
 	value: 0,
 	url: 'https://blog.example.com/post?id=1',
-	referrer: 'https://www.bing.com/',
+	referrer: 'https://www.bing.com/search?q=fire+hose&form=QBLH',
 	title: 'A post',
 	description: 'About things',
 	image: 'https://blog.example.com/i.png',
-	session: { id: 'abc123', visits: 2, pageviews: 3, new_visitor: false, search: { engine: 'Bing', query: 'fire' } },
 	browser: false,
 	mobile: false,
 	screen: { width: 2560, height: 1440, depth: 30, angle: 0 },
@@ -64,10 +64,10 @@ describe('parse', () => {
 			title: 'A post',
 			description: 'About things',
 			image: 'https://blog.example.com/i.png',
-			referrer: 'https://www.bing.com/',
+			referrer: 'https://www.bing.com/search?q=fire+hose&form=QBLH',
 			search_engine: 'Bing',
-			search_query: 'fire',
-			session: 'abc123',
+			search_query: 'fire hose',
+			visitor: '',
 			browser: 'Chrome',
 			browser_version: '140.0.0.0',
 			browser_engine: 'Blink',
@@ -80,9 +80,6 @@ describe('parse', () => {
 		});
 		expect(point.doubles).toEqual({
 			value: 0,
-			visits: 2,
-			session_pageviews: 3,
-			new_visitor: 0,
 			screen_width: 2560,
 			screen_height: 1440,
 			screen_depth: 30,
@@ -101,10 +98,20 @@ describe('parse', () => {
 		expect(point.doubles.value).toBe(1200);
 	});
 
-	it('copes without a session', () => {
-		const point = named({ ...pageview, session: false });
-		expect(point.blobs).toMatchObject({ session: '', search_engine: '', search_query: '' });
-		expect(point.doubles).toMatchObject({ visits: 0, session_pageviews: 0, new_visitor: 0 });
+	it('reads no search from a same-site referrer', () => {
+		const point = named({ ...pageview, referrer: 'https://blog.example.com/search?q=fire' });
+		expect(point.blobs).toMatchObject({ search_engine: '', search_query: '' });
+	});
+
+	it('adds the visitor ID in its place', () => {
+		const parsed = parse(pageview, request());
+		if ('error' in parsed) {
+			throw new Error(parsed.error);
+		}
+		const point = withVisitor(parsed.point, 'f'.repeat(32));
+		expect(point.blobs?.[Blobs.indexOf('visitor')]).toBe('f'.repeat(32));
+		expect(point.blobs?.length).toBe(Blobs.length);
+		expect(parsed.point.blobs?.[Blobs.indexOf('visitor')]).toBe('');
 	});
 
 	it('prefers the browser the client named from User-Agent Client Hints', () => {
@@ -149,5 +156,14 @@ describe('truncate', () => {
 		expect(truncate('ab€', 4)).toBe('ab');
 		expect(truncate('ab€', 5)).toBe('ab€');
 		expect(truncate('😀😀', 6)).toBe('😀');
+	});
+});
+
+describe('sql/README.md', () => {
+	it('documents the same layout, in the same order, with the same byte limits', () => {
+		const blobs = Array.from(readme.matchAll(/^\| `blob(\d+)` \| (\w+) \| (\d+) \|/gm), ([, n, name, bytes]) => [Number(n), name, Number(bytes)]);
+		const doubles = Array.from(readme.matchAll(/^\| `double(\d+)` \| (\w+) \|/gm), ([, n, name]) => [Number(n), name]);
+		expect(blobs).toEqual(Blobs.map((name, i) => [i + 1, name, BlobBytes[name]]));
+		expect(doubles).toEqual(Doubles.map((name, i) => [i + 1, name]));
 	});
 });

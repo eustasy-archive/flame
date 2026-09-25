@@ -9,9 +9,10 @@ The Cloudflare Worker, in TypeScript. It serves the [client](../client/README.md
    - `ALLOWED_DOMAINS`: the sites that may send data and read trending, separated by commas. `*.example.com` matches any subdomain of example.com, but not example.com itself. Nothing is allowed if it's empty.
    - `CF_ACCOUNT_ID`: your Cloudflare account ID, which `/trending` needs to query Analytics Engine.
    - `ANALYTICS_DATASET`: the dataset's name, which must match `dataset` under `analytics_engine_datasets`. It's `flame` unless you change both.
-3. **Add an API token for `/trending`.** Create a Cloudflare API token with *Account Analytics: Read*, then run `npx wrangler secret put CF_API_TOKEN`. For `npm run dev`, copy `.dev.vars.example` to `.dev.vars` and put it there.
-4. **Deploy.** `npx wrangler deploy` builds the client and deploys the Worker. Analytics Engine creates the dataset when the first data point is written.
-5. **Embed [the snippet](../client/README.md#the-snippet)** on each page, with your Worker's hostname in place of `flame.example.com`, then add your `flame(…)` calls after it.
+3. **Leave the `SALTS` KV namespace to Wrangler.** It holds a random salt for each day, for cookie-free visitor IDs. The first `npx wrangler deploy` creates it and writes its ID into `wrangler.jsonc`, which you should commit.
+4. **Add an API token for `/trending`.** Create a Cloudflare API token with *Account Analytics: Read*, then run `npx wrangler secret put CF_API_TOKEN`. For `npm run dev`, copy `.dev.vars.example` to `.dev.vars` and put it there.
+5. **Deploy.** `npx wrangler deploy` builds the client and deploys the Worker. Analytics Engine creates the dataset when the first data point is written.
+6. **Embed [the snippet](../client/README.md#the-snippet)** on each page, with your Worker's hostname in place of `flame.example.com`, then add your `flame(…)` calls after it.
 
 ## API
 
@@ -31,7 +32,6 @@ Stores one pageview or event. The client sends it for you. The body is JSON, and
 | value | Number | The amount, for payments and subscriptions. |
 | url | String | Required. The page's URL. Its domain must be allowed. |
 | referrer, title, description, image | String | |
-| session | Object or `false` | `id`, `visits`, `pageviews`, `new_visitor`, and `search` (`engine` and `query`). |
 | browser | Object or `false` | `name` and `version`, when User-Agent Client Hints name the browser. Otherwise the Worker reads the browser, its engine and the OS from the `User-Agent` header. |
 | mobile, language | String | |
 | screen | Object | `width`, `height`, `depth` and `angle`. |
@@ -39,7 +39,7 @@ Stores one pageview or event. The client sends it for you. The body is JSON, and
 | timezone | Object | `offset` (hours) and `dst`. |
 | cores | Number | |
 
-Anything unknown or of the wrong type is dropped, and long values are cut short.
+Anything unknown or of the wrong type is dropped, and long values are cut short. The Worker also works out the visitor's ID from a daily salt and the request's IP address and `User-Agent` header, reads the browser and OS from `User-Agent`, and adds the location from Cloudflare. It doesn't store the IP address or user agent.
 
 | Status | When |
 |---|---|
