@@ -1,3 +1,5 @@
+import { userAgent } from './useragent';
+
 // How a pageview or event from /track is stored in Workers Analytics Engine.
 // sql/README.md documents the same layout for anyone querying it, and the
 // .sql files in sql/ read it.
@@ -103,6 +105,10 @@ export function parse(body: unknown, request: Request): Parsed {
 	const viewport = object(payload.viewport);
 	const timezone = object(payload.timezone);
 	const cf = request.cf as IncomingRequestCfProperties | undefined;
+	// The client only sends a browser when User-Agent Client Hints name it, since
+	// Chromium browsers all look like Chrome in their user agent.
+	const agent = userAgent(request.headers.get('User-Agent'));
+	const brand = text(browser.name, BlobBytes.browser);
 
 	const blobs: Record<Blob, unknown> = {
 		type,
@@ -116,10 +122,10 @@ export function parse(body: unknown, request: Request): Parsed {
 		search_engine: search.engine,
 		search_query: search.query,
 		session: session.id,
-		browser: browser.name,
-		browser_version: browser.version,
-		browser_engine: browser.engine,
-		os: payload.os,
+		browser: brand || agent.browser,
+		browser_version: brand ? browser.version : agent.version,
+		browser_engine: agent.engine,
+		os: agent.os,
 		mobile: payload.mobile === 'phone' || payload.mobile === 'tablet' ? payload.mobile : '',
 		language: text(payload.language, BlobBytes.language) || acceptLanguage(request.headers.get('Accept-Language')),
 		country: cf?.country,

@@ -78,7 +78,14 @@ describe('flame()', () => {
 		load([ [ 'track' ] ]);
 		delete navigator.userAgentData;
 		var [ [ , Payload ] ] = await sent();
-		expect(Payload.browser).toMatchObject({ name: 'Brave', version: '140' });
+		expect(Payload.browser).toEqual({ name: 'Brave', version: '140' });
+	});
+
+	it('leaves the browser to the server without Client Hints', async () => {
+		load([ [ 'track' ] ]);
+		var [ [ , Payload ] ] = await sent();
+		expect(Payload.browser).toBe(false);
+		expect(Payload).not.toHaveProperty('os');
 	});
 
 	it('uses the name in window.flm', async () => {

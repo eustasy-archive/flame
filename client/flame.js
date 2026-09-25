@@ -1,7 +1,6 @@
 ////	Flame
 // Entry point for the bundle the Worker serves. esbuild wraps it in a function,
 // so nothing here leaks onto the host page.
-import platform from './lib.platform.js';
 import { cores } from './flame.processor.js';
 import { device } from './flame.device.js';
 import { display } from './flame.display.js';
@@ -85,12 +84,9 @@ function collect() {
 			new_visitor: Session.new_visitor,
 			search:      Session.search
 		},
-		browser: {
-			name:    Brand ? Brand.name : ( platform.name || false ),
-			version: Brand ? Brand.version : ( platform.version || false ),
-			engine:  platform.layout || false
-		},
-		os:       String( platform.os ),
+		// Only when User-Agent Client Hints name it. Otherwise the server reads
+		// the browser, its engine and the OS from the User-Agent header.
+		browser:  Brand,
 		mobile:   device(),
 		screen:   Display.screen,
 		viewport: Display.viewport,

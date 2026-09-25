@@ -31,10 +31,10 @@ Strings, cut to the byte limit shown.
 | `blob9` | search_engine | 100 | From the referrer that started the session, e.g. `Google`, or `Unknown`. |
 | `blob10` | search_query | 300 | Often empty: most search engines no longer pass the query on. |
 | `blob11` | session | 64 | A random ID kept in the visitor's localStorage. Empty if the site turned sessions off. |
-| `blob12` | browser | 100 | e.g. `Chrome`, `Firefox`. |
+| `blob12` | browser | 100 | e.g. `Chrome`, `Firefox`. From User-Agent Client Hints where the browser has them, so Brave and Edge aren't counted as Chrome; otherwise, like the version, engine and OS, from the `User-Agent` header. |
 | `blob13` | browser_version | 64 | |
 | `blob14` | browser_engine | 100 | e.g. `Blink`, `Gecko`. |
-| `blob15` | os | 100 | e.g. `Windows 10 64-bit`. |
+| `blob15` | os | 100 | e.g. `Windows 10` or `iOS 18.5`. |
 | `blob16` | mobile | 16 | `phone`, `tablet`, or empty. |
 | `blob17` | language | 64 | From the browser, or the `Accept-Language` header. |
 | `blob18` | country | 8 | From Cloudflare, e.g. `GB`. |

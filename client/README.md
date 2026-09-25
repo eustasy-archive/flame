@@ -72,7 +72,7 @@ flame('trending', { type: 'pageview', count: 5, range: 86400, terms: ['fire', 'h
 
 | Data | From |
 |---|---|
-| Browser, version, rendering engine, and operating system | [Platform.js](https://github.com/bestiejs/platform.js) (`lib.platform.js`), with the browser's name and version from User-Agent Client Hints where the browser has them (`flame.hints.js`) |
+| Browser, version, rendering engine, and operating system | The Worker, from the `User-Agent` header, with the browser's name and version from User-Agent Client Hints where the browser has them (`flame.hints.js`) |
 | Session ID, visits in the last 32 days, pageviews this visit, new visitor, search engine and query | `flame.session.js`. A session ends after 30 minutes without a pageview. |
 | Phone or tablet | `flame.device.js` |
 | Page title, description and image | `flame.page.js`, from Open Graph, microdata and Twitter tags |

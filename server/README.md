@@ -32,8 +32,8 @@ Stores one pageview or event. The client sends it for you. The body is JSON, and
 | url | String | Required. The page's URL. Its domain must be allowed. |
 | referrer, title, description, image | String | |
 | session | Object or `false` | `id`, `visits`, `pageviews`, `new_visitor`, and `search` (`engine` and `query`). |
-| browser | Object | `name`, `version` and `engine`. |
-| os, mobile, language | String | |
+| browser | Object or `false` | `name` and `version`, when User-Agent Client Hints name the browser. Otherwise the Worker reads the browser, its engine and the OS from the `User-Agent` header. |
+| mobile, language | String | |
 | screen | Object | `width`, `height`, `depth` and `angle`. |
 | viewport | Object | `width` and `height`. |
 | timezone | Object | `offset` (hours) and `dst`. |

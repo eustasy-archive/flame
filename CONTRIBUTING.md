@@ -51,7 +51,6 @@ Run these in `server/`.
 | `flame.js` | The entry point. It runs the snippet's queue and each command, and sends data. |
 | `flame.*.js` | One collector each. The [client README](client/README.md#whats-collected) lists what each collects. |
 | `snippet.js`, `snippet.min.js` | The snippet, readable and minified. |
-| `lib.platform.js` | [Platform.js](https://github.com/bestiejs/platform.js) 1.3.6, unmodified. |
 | `test/` | Tests, run in Vitest with jsdom. |
 
 ### server/
@@ -61,6 +60,7 @@ Run these in `server/`.
 | `src/index.ts` | Routing, and `/flame.js`. |
 | `src/track.ts` | `/track`. |
 | `src/datapoint.ts` | The data point layout, and turning a `/track` body into a data point. |
+| `src/useragent.ts` | Reading the browser, its engine and the OS from the `User-Agent` header, with [bowser](https://github.com/bowser-js/bowser). |
 | `src/trending.ts` | `/trending`: checking its parameters and shaping its results. |
 | `src/analytics.ts` | Filling in the `sql/` templates, and querying the SQL API. |
 | `src/allowed.ts` | The `ALLOWED_DOMAINS` allowlist. |
@@ -124,10 +124,6 @@ The client runs on other people's pages, so it:
 - **checks privacy settings first:** it looks at `honor-privacy-signals` and `session` before collecting or storing anything.
 
 It's written in the style of the original 2015 code: `var` and `function`, tabs, `Title_Case` local variables, and a `////	Name` comment heading each file. esbuild bundles it for ES2017.
-
-### Updating Platform.js
-
-Replace `client/lib.platform.js` with `platform.js` from the npm package (`npm pack platform`), unmodified. The build minifies it, and `define` is compiled out so it can't register with an AMD loader on the page.
 
 ## CI and Dependabot
 

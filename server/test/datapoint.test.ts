@@ -13,8 +13,7 @@ const pageview = {
 	description: 'About things',
 	image: 'https://blog.example.com/i.png',
 	session: { id: 'abc123', visits: 2, pageviews: 3, new_visitor: false, search: { engine: 'Bing', query: 'fire' } },
-	browser: { name: 'Chrome', version: '140', engine: 'Blink' },
-	os: 'Windows 10 64-bit',
+	browser: false,
 	mobile: false,
 	screen: { width: 2560, height: 1440, depth: 30, angle: 0 },
 	viewport: { width: 1280, height: 720 },
@@ -23,7 +22,9 @@ const pageview = {
 	cores: 16,
 };
 
-function request(headers: Record<string, string> = {}, cf: Record<string, string> = {}): Request {
+const Chrome = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
+
+function request(headers: Record<string, string> = { 'User-Agent': Chrome }, cf: Record<string, string> = {}): Request {
 	return new Request('https://flame.example.com/track', { method: 'POST', headers, cf });
 }
 
@@ -52,7 +53,7 @@ describe('layout', () => {
 
 describe('parse', () => {
 	it('lays out a pageview', () => {
-		const point = named(pageview, request({}, { country: 'GB', region: 'England', city: 'London' }));
+		const point = named(pageview, request({ 'User-Agent': Chrome }, { country: 'GB', region: 'England', city: 'London' }));
 		expect(point.domain).toBe('blog.example.com');
 		expect(point.index).toBe('blog.example.com');
 		expect(point.blobs).toEqual({
@@ -68,9 +69,9 @@ describe('parse', () => {
 			search_query: 'fire',
 			session: 'abc123',
 			browser: 'Chrome',
-			browser_version: '140',
+			browser_version: '140.0.0.0',
 			browser_engine: 'Blink',
-			os: 'Windows 10 64-bit',
+			os: 'Windows 10',
 			mobile: '',
 			language: 'en-GB',
 			country: 'GB',
@@ -106,8 +107,18 @@ describe('parse', () => {
 		expect(point.doubles).toMatchObject({ visits: 0, session_pageviews: 0, new_visitor: 0 });
 	});
 
+	it('prefers the browser the client named from User-Agent Client Hints', () => {
+		const point = named({ ...pageview, browser: { name: 'Brave', version: '140' } });
+		expect(point.blobs).toMatchObject({ browser: 'Brave', browser_version: '140', browser_engine: 'Blink', os: 'Windows 10' });
+	});
+
+	it('copes without a User-Agent header', () => {
+		const point = named(pageview, request({}));
+		expect(point.blobs).toMatchObject({ browser: '', browser_version: '', browser_engine: '', os: '' });
+	});
+
 	it('drops values of the wrong type', () => {
-		const point = named({ ...pageview, title: { html: '<b>' }, cores: 'lots', browser: 'Chrome', screen: [1, 2] });
+		const point = named({ ...pageview, title: { html: '<b>' }, cores: 'lots', browser: 'Brave', screen: [1, 2] }, request({}));
 		expect(point.blobs).toMatchObject({ title: '', browser: '' });
 		expect(point.doubles).toMatchObject({ cores: 0, screen_width: 0 });
 	});
@@ -115,7 +126,7 @@ describe('parse', () => {
 	it('falls back to the Accept-Language header', () => {
 		expect(named({ ...pageview, language: false }, request({ 'Accept-Language': 'fr-CA,fr;q=0.9,en;q=0.8' })).blobs.language).toBe('fr-CA');
 		expect(named({ ...pageview, language: false }, request({ 'Accept-Language': '*' })).blobs.language).toBe('');
-		expect(named({ ...pageview, language: false }).blobs.language).toBe('');
+		expect(named({ ...pageview, language: false }, request({})).blobs.language).toBe('');
 	});
 
 	it('cuts long values to their byte limit', () => {
