@@ -14,7 +14,6 @@ Everything planned is written and tested locally, but it hasn't run against a re
 
 - [ ] Deploy it, and check `/trending`'s queries against a real dataset. They've only been tested against a stand-in for the SQL API, so the details taken from Cloudflare's docs haven't been checked: `argMax(…, timestamp)`, `lower(hex(…))`, `position(… IN lowerUTF8(…))`, and counts arriving as strings.
 - [ ] Replace `flame.example.com` in the snippets with the Worker's hostname, and set `ALLOWED_DOMAINS` and `CF_ACCOUNT_ID` in `wrangler.jsonc`.
-- [ ] Cache `/trending` in the Worker with the Cache API, so repeat requests don't reach the SQL API. Each request makes two SQL API queries, and Cloudflare's API allows 1,200 requests per 5 minutes per user, then blocks all of that user's API calls for 5 minutes. That's 600 uncached `/trending` requests per 5 minutes. Workers Free also only includes 10,000 read queries a day. Browsers cache it for a minute, but that doesn't help across visitors.
 - [ ] Consider an account-owned API token for `CF_API_TOKEN`, if Cloudflare counts those separately from a user's rate limit. The docs don't say.
 
 ## Waiting on others
@@ -22,6 +21,8 @@ Everything planned is written and tested locally, but it hasn't run against a re
 - [ ] Remove the Vitest major-version `ignore` from `.github/dependabot.yml` once `@cloudflare/vitest-plugin` supports Vitest 5. Its peer range is `^4.1.0` as of 1.2.8, so Dependabot's Vitest 5 update ([#1](https://github.com/eustasy-archive/flame/pull/1)) can't install.
 
 ## Ideas
+
+- [ ] Try [Workers Cache](https://developers.cloudflare.com/workers/cache/) for `/trending` instead of the Cache API. It works on `workers.dev`, is shared across data centers, and collapses simultaneous requests into one. It sits in front of the Worker, though, so first check it keeps responses for different `Origin`s apart (`Vary: Origin`). Otherwise one site's CORS headers could be served to another.
 
 - [ ] Rate-limit `/track`, e.g. with Workers' Rate Limiting binding. The allowlist stops other sites' pages sending data, but not scripts that fake it.
 
@@ -70,3 +71,4 @@ Everything planned is written and tested locally, but it hasn't run against a re
 - [x] Node.js compatibility, on by default from the 2026-08-04 compatibility date, is turned off. Flame only uses web APIs.
 - [x] The snippet is `client/snippet.js`, with `snippet.min.js` to paste, which the root and client READMEs include. `index.html` and `index.min.html` are gone: their example calls are in the client README.
 - [x] `/trending` allows 90 days and 100 results for any request, replacing the 2015 limits (28 days, and fewer results for longer ranges). Analytics Engine keeps three months, and a query costs the same whatever its range or size.
+- [x] `/trending` caches each SQL API query's rows for a minute with the Cache API, so repeat requests don't use up the API's rate limit or read queries. Failed queries aren't cached, and every request is still checked and gets its own warnings. It only works on a custom domain, not `workers.dev`.

@@ -2,7 +2,7 @@ import pageviewsSql from '../../sql/trending-pageviews.sql';
 import totalSql from '../../sql/trending-total.sql';
 import valuesSql from '../../sql/trending-values.sql';
 import { allowed, allowedOrigin } from './allowed';
-import { fill, hex, number, query, type Row } from './analytics';
+import { cachedQuery, fill, hex, number, type Row } from './analytics';
 import { json } from './respond';
 import { xml } from './xml';
 
@@ -26,6 +26,8 @@ export type Parameters = {
 };
 
 type Format = 'json' | 'xml';
+
+type Query = (sql: string) => Promise<Row[]>;
 
 // Read and check GET /trending's query string. Everything that goes into SQL
 // is checked here, or is the category, which only goes in as hex.
@@ -124,7 +126,7 @@ function whole(value: string | null, fallback: number, max: number): number | un
 }
 
 // GET /trending
-export async function trending(request: Request, env: Env): Promise<Response> {
+export async function trending(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 	const checked = parameters(new URL(request.url).searchParams);
 	if ('error' in checked) {
 		return failure(checked.format, 400, checked.error);
@@ -140,9 +142,10 @@ export async function trending(request: Request, env: Env): Promise<Response> {
 		return failure(p.format, 500, 'The Worker needs CF_ACCOUNT_ID and CF_API_TOKEN to query Analytics Engine.');
 	}
 
+	const run = cachedQuery(env, ctx, new URL(request.url).origin);
 	let results: Record<string, unknown>[] | Record<string, Record<string, number>>;
 	try {
-		results = p.type === 'pageview' ? await pageviews(env, p) : await values(env, p);
+		results = p.type === 'pageview' ? await pageviews(run, env, p) : await values(run, env, p);
 	} catch (error) {
 		console.error(error);
 		return failure(p.format, 502, "Couldn't query Analytics Engine.");
@@ -189,11 +192,11 @@ function common(env: Env, p: Parameters) {
 }
 
 // The most viewed pages, as an array.
-async function pageviews(env: Env, p: Parameters): Promise<Record<string, unknown>[]> {
+async function pageviews(run: Query, env: Env, p: Parameters): Promise<Record<string, unknown>[]> {
 	const values = common(env, p);
 	const [rows, totals] = await Promise.all([
-		query(env, fill(pageviewsSql, { ...values, group: p.category === '__ALL__' ? ', blob3' : '', limit: p.count })),
-		query(env, fill(totalSql, values)),
+		run(fill(pageviewsSql, { ...values, group: p.category === '__ALL__' ? ', blob3' : '', limit: p.count })),
+		run(fill(totalSql, values)),
 	]);
 	const total = number(totals[0]?.count);
 	const top = number(rows[0]?.count);
@@ -216,11 +219,11 @@ async function pageviews(env: Env, p: Parameters): Promise<Record<string, unknow
 // Payments or subscriptions, as an object keyed by category. Without a
 // category, that's only '__ALL__'. With '__ALL__', it's '__ALL__' then each
 // category.
-async function values(env: Env, p: Parameters): Promise<Record<string, Record<string, number>>> {
+async function values(run: Query, env: Env, p: Parameters): Promise<Record<string, Record<string, number>>> {
 	const values = common(env, p);
 	const [rows, totals] = await Promise.all([
-		p.category === false ? Promise.resolve([] as Row[]) : query(env, fill(valuesSql, { ...values, limit: p.count })),
-		query(env, fill(totalSql, values)),
+		p.category === false ? Promise.resolve([] as Row[]) : run(fill(valuesSql, { ...values, limit: p.count })),
+		run(fill(totalSql, values)),
 	]);
 	const total = number(totals[0]?.count);
 	const top = number(rows[0]?.count);

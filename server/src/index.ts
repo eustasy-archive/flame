@@ -4,7 +4,7 @@ import { track } from './track';
 import { trending } from './trending';
 
 export default {
-	async fetch(request, env): Promise<Response> {
+	async fetch(request, env, ctx): Promise<Response> {
 		const url = new URL(request.url);
 		switch (url.pathname) {
 			case '/flame.js':
@@ -18,7 +18,7 @@ export default {
 				if (request.method === 'OPTIONS') {
 					return preflight(request, env, ['GET']);
 				}
-				return withCors(request, env, only(request, ['GET']) ?? (await trending(request, env)));
+				return withCors(request, env, only(request, ['GET']) ?? (await trending(request, env, ctx)));
 		}
 		return notFound();
 	},

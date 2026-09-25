@@ -10,7 +10,7 @@ The Cloudflare Worker, in TypeScript. It serves the [client](../client/README.md
    - `CF_ACCOUNT_ID`: your Cloudflare account ID, which `/trending` needs to query Analytics Engine.
    - `ANALYTICS_DATASET`: the dataset's name, which must match `dataset` under `analytics_engine_datasets`. It's `flame` unless you change both.
 3. **Add an API token for `/trending`.** Create a Cloudflare API token with *Account Analytics: Read*, then run `npx wrangler secret put CF_API_TOKEN`. For `npm run dev`, copy `.dev.vars.example` to `.dev.vars` and put it there.
-4. **Deploy.** `npx wrangler deploy` builds the client and deploys the Worker. Analytics Engine creates the dataset when the first data point is written.
+4. **Deploy.** `npx wrangler deploy` builds the client and deploys the Worker. Analytics Engine creates the dataset when the first data point is written. Give it a [custom domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/), since `/trending`'s cache only works there, not on `workers.dev`.
 5. **Embed [the snippet](../client/README.md#the-snippet)** on each page, with your Worker's hostname in place of `flame.example.com`, then add your `flame(…)` calls after it.
 
 ## Development
@@ -191,4 +191,7 @@ Each `/trending` request makes two queries to Analytics Engine's SQL API: one fo
 - **Rate:** Cloudflare's API allows [1,200 requests per 5 minutes per user](https://developers.cloudflare.com/fundamentals/api/reference/limits/), counting everything that user does through the API and dashboard, not just Flame. That's at most 600 `/trending` requests per 5 minutes. Going over returns a 429 and blocks *all* of that user's API calls for 5 minutes, which Flame reports as a 502.
 - **Cost:** Workers Free includes [10,000 read queries a day](https://developers.cloudflare.com/analytics/analytics-engine/pricing/), so 5,000 `/trending` requests. Workers Paid includes 1 million a month, then $1 per million. Cloudflare doesn't bill for Analytics Engine yet.
 
-Browsers cache `/trending` for a minute, but every visitor's first request still reaches the SQL API. A site showing trending pages on every page view will reach the rate limit quickly, so the Worker should cache results too: see [TODO.md](../TODO.md).
+So the Worker caches each query's rows for a minute, with the Cache API, and repeat requests within that minute don't reach the SQL API. Failed queries aren't cached. Every request is still checked against the allowlist, and gets its own warnings and CORS headers. Browsers cache responses for a minute too.
+
+- **The cache only works on a custom domain.** On `workers.dev`, the [Cache API](https://developers.cloudflare.com/workers/runtime-apis/cache/) does nothing, so every request reaches the SQL API.
+- **Each data center caches separately**, so a busy site still sends up to two queries a minute per data center for each distinct request.
