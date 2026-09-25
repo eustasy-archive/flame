@@ -21,6 +21,8 @@ async function get(query: string, init: RequestInit = {}) {
 	return { status: response.status, headers: response.headers, body: await response.json<Record<string, any>>() };
 }
 
+const TermsError = 'terms must be a JSON list of up to 10 words, like ["fire","hose"]. Words can have letters, numbers, spaces, hyphens and underscores.';
+
 describe('/trending', () => {
 	afterEach(() => {
 		vi.restoreAllMocks();
@@ -97,6 +99,22 @@ describe('/trending', () => {
 			for (const sql of sent(fetch)) {
 				expect(sql).not.toContain('hex(');
 			}
+		});
+
+		it('finds pages whose title or URL has any of the terms', async () => {
+			await get(`domain=blog.example.com&terms=${encodeURIComponent('["Fire", "hose-reel", "Élan"]')}`);
+			for (const sql of sent(fetch)) {
+				expect(sql).toContain(
+					"AND (position('fire' IN lowerUTF8(blob5)) > 0 OR position('fire' IN lowerUTF8(blob2)) > 0" +
+						" OR position('hose-reel' IN lowerUTF8(blob5)) > 0 OR position('hose-reel' IN lowerUTF8(blob2)) > 0" +
+						" OR position('élan' IN lowerUTF8(blob5)) > 0 OR position('élan' IN lowerUTF8(blob2)) > 0)",
+				);
+			}
+		});
+
+		it('combines terms with a category', async () => {
+			await get(`domain=blog.example.com&category=News&terms=${encodeURIComponent('["fire"]')}`);
+			expect(sent(fetch)[0]).toContain("AND lower(hex(blob3)) = '4e657773'\n\tAND (position('fire'");
 		});
 
 		it('takes the most results for a range with __MAX__', async () => {
@@ -218,6 +236,13 @@ describe('/trending', () => {
 		['domain=blog.example.com&range=1e9', 'range must be a number of seconds, or __MAX__.'],
 		['domain=blog.example.com&count=0', 'count must be a whole number, or __MAX__.'],
 		['domain=blog.example.com&format=csv', 'format must be json or xml.'],
+		['domain=blog.example.com&terms=fire', TermsError],
+		[`domain=blog.example.com&terms=${encodeURIComponent('"fire"')}`, TermsError],
+		[`domain=blog.example.com&terms=${encodeURIComponent('["it\'s"]')}`, TermsError],
+		[`domain=blog.example.com&terms=${encodeURIComponent('["a\\\\b"]')}`, TermsError],
+		[`domain=blog.example.com&terms=${encodeURIComponent('[""]')}`, TermsError],
+		[`domain=blog.example.com&terms=${encodeURIComponent(JSON.stringify(Array(11).fill('a')))}`, TermsError],
+		[`domain=blog.example.com&type=payment&terms=${encodeURIComponent('["fire"]')}`, 'terms only works with type=pageview.'],
 	])('rejects %s', async (query, error) => {
 		const fetch = api({});
 		const { status, body } = await get(query);

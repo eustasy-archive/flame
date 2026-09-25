@@ -19,6 +19,8 @@ export type Parameters = {
 	range: number;
 	// false to ignore categories, '__ALL__' for each category, or one category.
 	category: string | false;
+	// Lowercase words, of which a page's title or URL must contain one.
+	terms: string[];
 	format: Format;
 };
 
@@ -78,8 +80,12 @@ export function parameters(search: URLSearchParams): { error: string; format: Fo
 		count = maxCount(range);
 	}
 
-	if (search.has('terms')) {
-		return failed("terms isn't supported yet.");
+	const terms = words(search.get('terms'));
+	if (terms === undefined) {
+		return failed('terms must be a JSON list of up to 10 words, like ["fire","hose"]. Words can have letters, numbers, spaces, hyphens and underscores.');
+	}
+	if (terms.length && type !== 'pageview') {
+		return failed('terms only works with type=pageview.');
 	}
 
 	const category = search.get('category');
@@ -90,10 +96,30 @@ export function parameters(search: URLSearchParams): { error: string; format: Fo
 			count,
 			range,
 			category: category === null || category === '' || category === 'false' ? false : category,
+			terms,
 			format,
 		},
 		warnings,
 	};
+}
+
+// The terms parameter: a JSON list of words, lowercased. They go into SQL, so
+// they can only have letters, numbers, spaces, hyphens and underscores.
+function words(value: string | null): string[] | undefined {
+	if (value === null || value === '') {
+		return [];
+	}
+	let list: unknown;
+	try {
+		list = JSON.parse(value);
+	} catch {
+		return undefined;
+	}
+	if (!Array.isArray(list) || list.length > 10) {
+		return undefined;
+	}
+	const terms = list.map((term) => (typeof term === 'string' ? term.trim().toLowerCase() : ''));
+	return terms.every((term) => /^[\p{L}\p{N} _-]{1,50}$/u.test(term)) ? terms : undefined;
 }
 
 // A positive whole number, the default if missing, or the maximum for __MAX__.
@@ -166,7 +192,12 @@ function common(env: Env, p: Parameters) {
 		domain: p.domain,
 		type: p.type,
 		seconds: p.range,
-		where: p.category === false || p.category === '__ALL__' ? '' : `AND lower(hex(blob3)) = '${hex(p.category)}'`,
+		where: [
+			p.category === false || p.category === '__ALL__' ? '' : `AND lower(hex(blob3)) = '${hex(p.category)}'`,
+			p.terms.length ? `AND (${p.terms.map((term) => `position('${term}' IN lowerUTF8(blob5)) > 0 OR position('${term}' IN lowerUTF8(blob2)) > 0`).join(' OR ')})` : '',
+		]
+			.filter(Boolean)
+			.join('\n\t'),
 	};
 }
 
