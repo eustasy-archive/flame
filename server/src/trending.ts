@@ -1,3 +1,4 @@
+import categoriesSql from '../../sql/trending-categories.sql';
 import pageviewsSql from '../../sql/trending-pageviews.sql';
 import totalSql from '../../sql/trending-total.sql';
 import valuesSql from '../../sql/trending-values.sql';
@@ -13,6 +14,9 @@ type Type = (typeof Types)[number];
 const MaxRange = 90 * 24 * 60 * 60;
 const MaxCount = 100;
 
+// Each category of pageviews takes a query of its own.
+const MaxCategories = 10;
+
 export type Parameters = {
 	type: Type;
 	domain: string;
@@ -20,6 +24,8 @@ export type Parameters = {
 	range: number;
 	// false to ignore categories, '__ALL__' for each category, or one category.
 	category: string | false;
+	// With category=__ALL__, how many categories of pageviews to rank pages in.
+	categories: number;
 	// Lowercase words, of which a page's title or URL must contain one.
 	terms: string[];
 	format: Format;
@@ -77,6 +83,15 @@ export function parameters(search: URLSearchParams): { error: string; format: Fo
 		return failed('terms only works with type=pageview.');
 	}
 
+	let categories = whole(search.get('categories'), 5, MaxCategories);
+	if (categories === undefined) {
+		return failed('categories must be a whole number, or __MAX__.');
+	}
+	if (categories > MaxCategories) {
+		warnings.push(`categories can't be more than ${MaxCategories}, so it was cut to that.`);
+		categories = MaxCategories;
+	}
+
 	const category = search.get('category');
 	return {
 		parameters: {
@@ -85,6 +100,7 @@ export function parameters(search: URLSearchParams): { error: string; format: Fo
 			count,
 			range,
 			category: category === null || category === '' || category === 'false' ? false : category,
+			categories,
 			terms,
 			format,
 		},
@@ -143,7 +159,7 @@ export async function trending(request: Request, env: Env): Promise<Response> {
 	}
 
 	const run = (sql: string) => query(env, sql);
-	let results: Record<string, unknown>[] | Record<string, Record<string, number>>;
+	let results: Record<string, unknown>[] | Record<string, unknown>;
 	try {
 		results = p.type === 'pageview' ? await pageviews(run, env, p) : await values(run, env, p);
 	} catch (error) {
@@ -178,15 +194,15 @@ function failure(format: Format, status: number, error: string): Response {
 	return respond(format, { success: false, warning: false, error }, status);
 }
 
-// The values every template shares.
-function common(env: Env, p: Parameters) {
+// The values every template shares, filtered to a category if there's one.
+function common(env: Env, p: Parameters, category: string | false = p.category === '__ALL__' ? false : p.category) {
 	return {
 		dataset: env.ANALYTICS_DATASET,
 		domain: p.domain,
 		type: p.type,
 		seconds: p.range,
 		where: [
-			p.category === false || p.category === '__ALL__' ? '' : `AND lower(hex(blob3)) = '${hex(p.category)}'`,
+			category === false ? '' : `AND lower(hex(blob3)) = '${hex(category)}'`,
 			p.terms.length ? `AND (${p.terms.map((term) => `position('${term}' IN lowerUTF8(blob5)) > 0 OR position('${term}' IN lowerUTF8(blob2)) > 0`).join(' OR ')})` : '',
 		]
 			.filter(Boolean)
@@ -194,14 +210,32 @@ function common(env: Env, p: Parameters) {
 	};
 }
 
-// The most viewed pages, as an array.
-async function pageviews(run: Query, env: Env, p: Parameters): Promise<Record<string, unknown>[]> {
+// The most viewed pages, as an array. With category=__ALL__, it's an object of
+// arrays instead: '__ALL__', then the most viewed categories, each with its own
+// most viewed pages. Without window functions, each category needs a query.
+async function pageviews(run: Query, env: Env, p: Parameters): Promise<Record<string, unknown>[] | Record<string, Record<string, unknown>[]>> {
 	const values = common(env, p);
-	const [rows, totals] = await Promise.all([
-		run(fill(pageviewsSql, { ...values, group: p.category === '__ALL__' ? ', blob3' : '', limit: p.count })),
+	const [rows, totals, categories] = await Promise.all([
+		run(fill(pageviewsSql, { ...values, limit: p.count })),
 		run(fill(totalSql, values)),
+		p.category === '__ALL__' ? run(fill(categoriesSql, { ...values, limit: p.categories })) : Promise.resolve([] as Row[]),
 	]);
-	const total = number(totals[0]?.count);
+	const all = pages(rows, number(totals[0]?.count), p);
+	if (p.category !== '__ALL__') {
+		return all;
+	}
+	const each = await Promise.all(
+		categories.map((row) => run(fill(pageviewsSql, { ...common(env, p, text(row.category)), limit: p.count }))),
+	);
+	const results: Record<string, Record<string, unknown>[]> = { __ALL__: all };
+	categories.forEach((row, i) => {
+		results[text(row.category)] = pages(each[i], number(row.count), p);
+	});
+	return results;
+}
+
+// Rows of pages, as results. Percentages are of the total given.
+function pages(rows: Row[], total: number, p: Parameters): Record<string, unknown>[] {
 	const top = number(rows[0]?.count);
 	return rows.map((row) => {
 		const count = number(row.count);

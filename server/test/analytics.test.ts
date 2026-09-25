@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import categoriesSql from '../../sql/trending-categories.sql';
 import pageviewsSql from '../../sql/trending-pageviews.sql';
 import totalSql from '../../sql/trending-total.sql';
 import valuesSql from '../../sql/trending-values.sql';
@@ -41,6 +42,7 @@ describe('number', () => {
 // (count, average) are left out.
 describe.each([
 	['trending-pageviews.sql', pageviewsSql],
+	['trending-categories.sql', categoriesSql],
 	['trending-values.sql', valuesSql],
 	['trending-total.sql', totalSql],
 ])('sql/%s', (name, sql) => {

@@ -63,6 +63,7 @@ Strings, cut to the byte limit shown.
 | File | For |
 |---|---|
 | [`trending-pageviews.sql`](trending-pageviews.sql) | The most viewed pages. |
+| [`trending-categories.sql`](trending-categories.sql) | Pageviews by category. |
 | [`trending-values.sql`](trending-values.sql) | Payments or subscriptions by category. |
 | [`trending-total.sql`](trending-total.sql) | Totals, which percentages are worked out from. |
 

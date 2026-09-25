@@ -3,10 +3,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { trending } from '../src/trending';
 
 // Stands in for the Analytics Engine SQL API, answering each query by its shape.
-function api(rows: { pageviews?: object[]; values?: object[]; total?: object }) {
+// A page query filtered to a category gets that category's pages, if given.
+function api(rows: { pageviews?: object[]; values?: object[]; total?: object; categories?: object[]; pagesIn?: Record<string, object[]> }) {
 	return vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
 		const sql = String(init?.body);
-		const data = sql.includes('argMax(') ? rows.pageviews : sql.includes('GROUP BY category') ? rows.values : [rows.total];
+		const hex = sql.match(/lower\(hex\(blob3\)\) = '([0-9a-f]*)'/)?.[1];
+		const category = hex === undefined ? undefined : new TextDecoder().decode(new Uint8Array(hex.match(/../g)?.map((byte) => parseInt(byte, 16)) ?? []));
+		const data = sql.includes('argMax(')
+			? (category !== undefined && rows.pagesIn?.[category]) || rows.pageviews
+			: sql.includes('GROUP BY category')
+				? sql.includes("blob1 = 'pageview'")
+					? rows.categories
+					: rows.values
+				: [rows.total];
 		return Response.json({ meta: [], data: data ?? [], rows: data?.length ?? 0 });
 	});
 }
@@ -87,12 +96,6 @@ describe('/trending', () => {
 			}
 		});
 
-		it('groups by category with __ALL__', async () => {
-			await get('domain=blog.example.com&category=__ALL__');
-			const [pages, total] = sent(fetch);
-			expect(pages).toContain('GROUP BY data, blob3');
-			expect(total).not.toContain('hex(');
-		});
 
 		it('ignores categories with category=false', async () => {
 			await get('domain=blog.example.com&category=false');
@@ -140,6 +143,70 @@ describe('/trending', () => {
 			const { body } = await get('domain=blog.example.com&count=150');
 			expect(sent(fetch)[0]).toContain('LIMIT 100');
 			expect(body.warning).toBe("count can't be more than 100, so it was cut to that.");
+		});
+	});
+
+	describe('with category=__ALL__', () => {
+		const page = (url: string, category: string, count: string) => ({ data: `https://blog.example.com/${url}`, category, title: url, description: '', image: '', count });
+		let fetch: ReturnType<typeof api>;
+		beforeEach(() => {
+			fetch = api({
+				pageviews: [page('a', 'News', '30'), page('b', 'Sport', '20'), page('c', '', '10')],
+				total: { count: '60' },
+				categories: [
+					{ category: 'News', count: '40' },
+					{ category: "Editor's picks", count: '10' },
+				],
+				pagesIn: {
+					News: [page('a', 'News', '30'), page('d', 'News', '10')],
+					"Editor's picks": [page('e', "Editor's picks", '10')],
+				},
+			});
+		});
+
+		it('gives __ALL__, then the top pages in each of the top categories', async () => {
+			const { body } = await get('domain=blog.example.com&category=__ALL__&count=2');
+			expect(Object.keys(body.results)).toEqual(['__ALL__', 'News', "Editor's picks"]);
+			expect(body.count).toBe(2);
+			expect(body.results.__ALL__.map((page: any) => [page.url, page.count_percentage])).toEqual([
+				['https://blog.example.com/a', 50],
+				['https://blog.example.com/b', 33],
+				['https://blog.example.com/c', 17],
+			]);
+			// Percentages are of the category's views.
+			expect(body.results.News.map((page: any) => [page.url, page.count, page.count_percentage, page.count_relative])).toEqual([
+				['https://blog.example.com/a', 30, 75, 100],
+				['https://blog.example.com/d', 10, 25, 33],
+			]);
+			expect(body.results["Editor's picks"][0]).toMatchObject({ url: 'https://blog.example.com/e', category: "Editor's picks", count_percentage: 100 });
+		});
+
+		it('queries each category by hex, leaving out pages without one', async () => {
+			await get('domain=blog.example.com&category=__ALL__&count=2&categories=2');
+			const sql = sent(fetch);
+			expect(sql).toHaveLength(5);
+			const categories = sql.find((query) => query.includes('GROUP BY category'))!;
+			expect(categories).toContain("AND blob3 != ''");
+			expect(categories).toContain('LIMIT 2');
+			expect(sql.filter((query) => query.includes("lower(hex(blob3)) = '4e657773'"))).toHaveLength(1);
+			expect(sql.filter((query) => query.includes("lower(hex(blob3)) = '456469746f722773207069636b73'"))).toHaveLength(1);
+			expect(sql.join('\n')).not.toContain("Editor's");
+		});
+
+		it('takes 5 categories by default, and up to 10', async () => {
+			await get('domain=blog.example.com&category=__ALL__');
+			expect(sent(fetch).find((query) => query.includes('GROUP BY category'))).toContain('LIMIT 5');
+			fetch.mockClear();
+			const { body } = await get('domain=blog.example.com&category=__ALL__&categories=50');
+			expect(sent(fetch).find((query) => query.includes('GROUP BY category'))).toContain('LIMIT 10');
+			expect(body.warning).toBe("categories can't be more than 10, so it was cut to that.");
+		});
+
+		it('as XML, lists each category\'s pages', async () => {
+			const response = await exports.default.fetch('https://flame.example.com/trending?domain=blog.example.com&category=__ALL__&count=1&format=xml');
+			const xml = await response.text();
+			expect(xml).toContain('\t\t<category name="__ALL__">\n\t\t\t<result>\n\t\t\t\t<url>https://blog.example.com/a</url>');
+			expect(xml).toContain('\t\t<category name="Editor&apos;s picks">\n\t\t\t<result>\n\t\t\t\t<url>https://blog.example.com/e</url>');
 		});
 	});
 
@@ -243,6 +310,7 @@ describe('/trending', () => {
 		['domain=blog.example.com&range=1e9', 'range must be a number of seconds, or __MAX__.'],
 		['domain=blog.example.com&count=0', 'count must be a whole number, or __MAX__.'],
 		['domain=blog.example.com&format=csv', 'format must be json or xml.'],
+		['domain=blog.example.com&categories=0', 'categories must be a whole number, or __MAX__.'],
 		['domain=blog.example.com&terms=fire', TermsError],
 		[`domain=blog.example.com&terms=${encodeURIComponent('"fire"')}`, TermsError],
 		[`domain=blog.example.com&terms=${encodeURIComponent('["it\'s"]')}`, TermsError],

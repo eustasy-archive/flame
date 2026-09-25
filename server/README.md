@@ -65,7 +65,8 @@ GET /trending?domain=blog.example.com&range=86400&count=5
 | count | Integer | `10` | How many results to return, up to 100. `__MAX__` for 100. |
 | range | Integer | `3600` | How many seconds back to look, up to 90 days (7776000). `__MAX__` for 90 days. |
 | format | String | `json` | `json` or `xml`. |
-| category | String | _none_ | Only count this category. If empty or `false`, categories are ignored. If `__ALL__`, pageviews are ranked per category, and payments and subscriptions are given for each category as well as all together. |
+| category | String | _none_ | Only count this category. If empty or `false`, categories are ignored. If `__ALL__`, results are given all together as `__ALL__`, then for each category. See the results below. |
+| categories | Integer | `5` | With `category=__ALL__`, how many of the most viewed categories to rank pages in, up to 10. `__MAX__` for 10. Payments and subscriptions use `count` instead. |
 | terms | String | _none_ | A JSON list of up to 10 words, like `["fire","hose"]`. Only pages whose title or URL contains one of them are ranked, ignoring case. Words can only have letters, numbers, spaces, hyphens and underscores. Pageviews only. |
 
 #### Response
@@ -92,6 +93,8 @@ With `format=xml`, the same response is an XML document. Pages are `<result>` el
 
 An array, most viewed first.
 
+With `category=__ALL__`, an object of arrays instead: `__ALL__`, the most viewed pages overall, then the most viewed categories (as many as `categories`), each with its own most viewed pages. Pages without a category only appear in `__ALL__`. The response's `count` is the number of categories.
+
 | Key | Type | Example | Description |
 |---|---|---|---|
 | url | String | `'https://blog.example.com/post'` | The page's URL, or the data it was tracked with. |
@@ -101,8 +104,8 @@ An array, most viewed first.
 | domain | String | `'blog.example.com'` | |
 | category | String | `'Updates'` | The page's most recent category, or the one it's ranked in with `category=__ALL__`. |
 | count | Integer | 1203 | How many views it had in the range. |
-| count_percentage | Percentage | 23 | Its share of all matching views in the range. |
-| count_relative | Percentage | 73 | Its views as a percentage of the top result's. |
+| count_percentage | Percentage | 23 | Its share of all matching views in the range, or of its category's with `category=__ALL__`. |
+| count_relative | Percentage | 73 | Its views as a percentage of the top result's, in the same list. |
 
 #### Results for payments and subscriptions
 
@@ -160,7 +163,7 @@ Counts come from Analytics Engine, which samples data at high volume, so large c
 
 #### SQL API limits
 
-Each `/trending` request makes two queries to Analytics Engine's SQL API: one for the results, and one for the totals behind the percentages. The range and number of results don't change what a query costs.
+Each `/trending` request makes two queries to Analytics Engine's SQL API: one for the results, and one for the totals behind the percentages. Pageviews with `category=__ALL__` make three, plus one for each category. The range and number of results don't change what a query costs.
 
 - **Rate:** Cloudflare's API allows [1,200 requests per 5 minutes per user](https://developers.cloudflare.com/fundamentals/api/reference/limits/), counting everything that user does through the API and dashboard, not just Flame. That's at most 600 `/trending` requests per 5 minutes. Going over returns a 429 and blocks *all* of that user's API calls for 5 minutes, which Flame reports as a 502.
 - **Cost:** Workers Free includes [10,000 read queries a day](https://developers.cloudflare.com/analytics/analytics-engine/pricing/), so 5,000 `/trending` requests. Workers Paid includes 1 million a month, then $1 per million. Cloudflare doesn't bill for Analytics Engine yet.
