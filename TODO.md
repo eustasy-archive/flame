@@ -40,7 +40,6 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 
 ### Broken
 - [ ] Snippets load from three different URLs: `/api/code.js` (`index.html`), `/api/flame/script.js` (`client/flame.inline.js`) and `empty.js` (`index.min.html`). Point them all at the Worker's bundle URL.
-- [ ] `flame.page.js`: the `itemprop` fallbacks often match ordinary elements rather than `<meta>` tags (`<h1 itemprop="name">`, `<img itemprop="image" src="…">`). Those have no `content` attribute, so the value comes out as `null`, and the title never falls back to `document.title`. Read `textContent` or `src` for them.
 
 ### To do
 - [ ] Consume the command queue. The queue function's name is in `window.flm` (`flame` by default), and its calls are in `.q`.
@@ -68,3 +67,4 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 - [x] Snippets store the queue function's name in `window.flm`. It was `sher` in the unminified snippets and `isher` in the minified ones.
 - [x] Dropped the Flash, Java, QuickTime and Silverlight columns from `Pageviews` and `Events`.
 - [x] `flame.page.js` now stores the description and image `content` strings, not their DOM elements.
+- [x] `flame.page.js` reads microdata on ordinary elements (text, `src` or `href`), and an empty title falls back to `document.title`.
