@@ -3,6 +3,9 @@
 	"name": "flame",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-09-25",
+	// Node.js compatibility is on by default from 2026-08-04. Flame only uses web
+	// APIs, so it's turned off.
+	"compatibility_flags": ["no_nodejs_compat", "no_nodejs_compat_v2"],
 	"observability": {
 		"enabled": true
 	},
