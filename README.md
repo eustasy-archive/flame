@@ -5,10 +5,10 @@ Pageview and event tracking, with an API for trending pages. Unfinished; see [TO
 | Folder | Contents |
 |---|---|
 | `client/` | Browser scripts that collect pageview data, and the embed snippet (`flame.inline.js`). |
-| `server/` | A Cloudflare Worker that serves the client bundle and handles `/track` and `/trending`. Not written yet. |
+| `server/` | A Cloudflare Worker that serves the client bundle and handles `/track` and `/trending`. |
 | `sql/` | The database schema. |
 
-`index.html` and `index.min.html` are example embeds of the snippet. `index.php` is the old PHP server, which the Worker replaces.
+`index.html` and `index.min.html` are example embeds of the snippet.
 
 ## API
 

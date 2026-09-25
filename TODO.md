@@ -3,20 +3,17 @@
 Flame is an unfinished 2015 prototype, being rebuilt as three parts:
 
 - `client/`: browser scripts and the embed snippet
-- `server/`: a Cloudflare Worker in TypeScript, replacing `index.php`
+- `server/`: a Cloudflare Worker in TypeScript
 - `sql/`: the Analytics Engine queries behind `/trending`, and the layout of each data point
 
 Pageviews and events are stored in Workers Analytics Engine. It keeps data for three months, samples at high volume, and holds up to 20 strings (blobs) and 20 numbers (doubles) per data point. Only allowlisted domains can send data or read trending. Settings are made on the client with `flame('setting', …)`, so there's no settings table.
 
-Nothing works end-to-end yet. The Worker doesn't exist, and `/track` and `/trending` were never written.
+Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` and `/trending` aren't written.
 
 ## Server (`server/`)
 
-The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/`, so it stopped working when the files moved.
-
 - [x] Scaffold the Worker in `server/` (`wrangler.jsonc`, `package.json`, entry point).
 - [x] Return a 404 for unknown paths.
-- [ ] Delete `index.php` once the Worker serves the bundle.
 - [ ] Implement `PUT /track`, writing one Analytics Engine data point per call.
 - [ ] Only accept `/track` and `/trending` for domains in an allowlist (`ALLOWED_DOMAINS`).
 - [ ] In `/track`, ignore requests that carry `Sec-GPC: 1` or `DNT: 1`. That also catches older client scripts.
@@ -66,3 +63,4 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 - [x] `npm run build` in `server/` bundles `client/flame.js` with esbuild into `dist/public/flame.js` and `flame.min.js`. The bundle adds no globals to host pages, and Platform.js no longer registers with AMD loaders like RequireJS. `lib.platform.min.js` is gone. `flame.inline.min.js` stays as the snippet to paste.
 - [x] Client tests run in Vitest with jsdom (`client/test/`).
 - [x] The Worker serves the client bundle at `/flame.js` from Workers Static Assets, minified unless `?verbose` is set. `wrangler dev` and `wrangler deploy` build it first. `/inline` is gone.
+- [x] Deleted `index.php`. The Worker replaces it.
