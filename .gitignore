@@ -1,0 +1,2 @@
+# Vitest caches results here when running the client tests.
+node_modules/
