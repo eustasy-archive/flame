@@ -21,6 +21,22 @@ Everything planned is written and tested locally, but it hasn't run against a re
 
 - [ ] Remove the Vitest major-version `ignore` from `.github/dependabot.yml` once `@cloudflare/vitest-plugin` supports Vitest 5. Its peer range is `^4.1.0` as of 1.2.8, so Dependabot's Vitest 5 update ([#1](https://github.com/eustasy-archive/flame/pull/1)) can't install.
 
-## Ideas
+## Later
 
-- [ ] Rate-limit `/track`, e.g. with Workers' Rate Limiting binding. The allowlist stops other sites' pages sending data, but not scripts that fake it.
+Lower priority, mostly from comparing Flame with [Plausible](https://github.com/plausible/analytics).
+
+- [ ] **Stats API:** visitors, pageviews, bounce rate, visit duration and views per visit, over time. Break them down by page, entry and exit page, referrer, country, region and city, browser, OS, device, screen size and language. Flame already stores most of these, so it's mostly new `.sql` templates.
+- [ ] **Dashboard** on top of the stats API, with shared links and embedding. It needs authentication, which Flame doesn't have.
+- [ ] **Campaigns:** split `utm_*` parameters out of the URL in `/track`, since Analytics Engine's SQL has no documented URL functions, and group traffic into channels. All 20 blobs are in use, so something has to make room.
+- [ ] **Single-page apps:** track a pageview on `pushState`, back and forward, and hash changes, instead of needing a `track` call for each.
+- [ ] **Codeless events:** outbound link clicks, file downloads, form submissions and 404 pages.
+- [ ] **Engagement:** scroll depth and time on page, sent when the page is hidden, for bounce rate and visit duration. 7 doubles are free.
+- [ ] **Custom properties:** key/value pairs on events, beyond `data` and `category`.
+- [ ] **Goals and conversion rates.**
+- [ ] **Revenue currency:** payments and subscriptions have an amount but no currency.
+- [ ] **Filtering:** bots, localhost, excluded pages, and a site owner's own visits.
+- [ ] **Reports:** weekly or monthly email or Slack reports, and traffic spike alerts, from a cron trigger.
+- [ ] **Integrations:** Google Search Console keywords, imports from Google Analytics or CSV, and CSV export.
+- [ ] **Events API:** server-side tracking, like `/track` but authenticated, without the `Origin` check.
+- [ ] **Longer history:** Analytics Engine keeps three months, so a cron trigger could copy daily totals to D1.
+- [ ] **Rate-limit `/track`**, e.g. with Workers' Rate Limiting binding. The allowlist stops other sites' pages sending data, but not scripts that fake it.
