@@ -1,0 +1,30 @@
+# Dependabot version updates. Minor and patch updates are grouped into one pull
+# request per ecosystem, and major updates get a pull request each.
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    assignees:
+      - "lewisgoddard"
+    groups:
+      gha-patching:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # The Worker's and the client's tooling.
+  - package-ecosystem: "npm"
+    directory: "/server"
+    schedule:
+      interval: "daily"
+    assignees:
+      - "lewisgoddard"
+    groups:
+      npm-patching:
+        update-types:
+          - "minor"
+          - "patch"
