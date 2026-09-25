@@ -1,6 +1,6 @@
 # TODO
 
-Flame is an unfinished 2015 prototype, being rebuilt as three parts:
+Flame is a 2015 prototype, rebuilt as three parts:
 
 - `client/`: browser scripts and the embed snippet
 - `server/`: a Cloudflare Worker in TypeScript
@@ -8,26 +8,21 @@ Flame is an unfinished 2015 prototype, being rebuilt as three parts:
 
 Pageviews and events are stored in Workers Analytics Engine. It keeps data for three months, samples at high volume, and holds up to 20 strings (blobs) and 20 numbers (doubles) per data point. Only allowlisted domains can send data or read trending. Settings are made on the client with `flame('setting', …)`, so there's no settings table.
 
-Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` and `/trending` aren't written.
+Everything planned is written and tested locally, but it hasn't run against a real Analytics Engine dataset yet.
 
-## Server (`server/`)
+## Before it's used
 
-- [x] Scaffold the Worker in `server/` (`wrangler.jsonc`, `package.json`, entry point).
-- [x] Return a 404 for unknown paths.
+- [ ] Deploy it, and check `/trending`'s queries against a real dataset. They've only been tested against a stand-in for the SQL API, so the details taken from Cloudflare's docs haven't been checked: `argMax(…, timestamp)`, `lower(hex(…))`, `position(… IN lowerUTF8(…))`, and counts arriving as strings.
+- [ ] Replace `flame.example.com` in the snippets with the Worker's hostname, and set `ALLOWED_DOMAINS` and `CF_ACCOUNT_ID` in `wrangler.jsonc`.
 
-## Analytics Engine (`sql/`)
+## Ideas
 
-
-## Client (`client/`)
-
-
-## Docs
-
-- [ ] README "Results for Subscriptions" section is empty.
-- [ ] Document the `/track` payload, settings, and how to configure and deploy the Worker.
+- [ ] Rate-limit `/track`, e.g. with Workers' Rate Limiting binding. The allowlist stops other sites' pages sending data, but not scripts that fake it.
+- [ ] Cache `/trending` in the Worker with the Cache API, so pages don't each query the SQL API. Browsers already cache it for a minute.
 
 ## Done
 
+- [x] Scaffolded the Worker in `server/` (`wrangler.jsonc`, `package.json`, `src/index.ts`). Unknown paths return a 404.
 - [x] Updated Platform.js from 1.3.0 to 1.3.6.
 - [x] Replaced session.js 0.4.1 with `client/flame.session.js`. This dropped its dead Google and ipinfodb location lookups and its plugin detection, and fixed the `session.locale.lang` fallback in `flame.language.js`.
 - [x] `flame.timezone.js` no longer patches `Date.prototype`.
@@ -63,3 +58,5 @@ Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` 
 - [x] The `/trending` queries are `.sql` templates in `sql/`, which the Worker imports as text. Request values never go into them as they are: only checked types, integers and allowlisted hostnames, with categories compared as hex.
 - [x] `/trending?format=xml` returns the same response as XML, errors included. Pages are `<result>` elements, and categories are `<category name="…">`.
 - [x] `/trending?terms=["fire","hose"]` only ranks pages whose title or URL contains one of the words, ignoring case. Words can only have letters, numbers, spaces, hyphens and underscores, since they go into SQL.
+- [x] `flame('trending', options, callback)` fetches `/trending` for the page's domain.
+- [x] The README covers setting up and deploying the Worker, using `flame()`, what's collected, and the API, including the `/track` payload and the results for subscriptions.
