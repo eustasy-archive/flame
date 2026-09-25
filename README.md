@@ -119,7 +119,7 @@ GET: /trending?type=payment&range=__MAX__&category=__ALL__
 Domain fetches cannot span more than 28 days. We imagine most people will be satisfied with these limits.
 
 | Time | Integer | Maximum Results |
-|---|---|---|---|
+|---|---|---|
 | 1 Month (28 days) | 2419200 | 10 |
 | 1 Week (7 Days) | 604800 | 20 |
 | 1 Day | 86400 | 50 |
