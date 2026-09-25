@@ -19,24 +19,53 @@ function flame_page_value(Element) {
 	return ( Value || '' ).replace(/\s+/g, ' ').trim();
 }
 
-// Microdata on a nested item, like an article's author, isn't about the page.
-function flame_page_nested(Element) {
-	var Item = Element.parentElement && Element.parentElement.closest('[itemscope]');
-	return Element.hasAttribute('itemprop') && Item && Item.hasAttribute('itemprop');
+// How well an element describes the page: 1 for the page's main item, 2 for any other
+// top-level item, or false for microdata that isn't about the page. That's a nested item,
+// like an article's author, or a site-wide one, like the publisher in the header.
+function flame_page_rank(Element) {
+	var Item, Types;
+	if ( !Element.hasAttribute('itemprop') ) {
+		return 1;
+	}
+	Item = Element.parentElement && Element.parentElement.closest('[itemscope]');
+	if ( !Item ) {
+		return 2;
+	}
+	if ( Item.hasAttribute('itemprop') ) {
+		return /(^|\s)mainEntity(\s|$)/.test(Item.getAttribute('itemprop')) ? 1 : false;
+	}
+	// https://schema.org/Article -> Article
+	Types = ( Item.getAttribute('itemtype') || '' ).split(/\s+/).map(function(Type) {
+		return Type.split('/').pop();
+	});
+	if ( Types.some(function(Type) {
+		return /Article$|Posting$|Page$|^(CreativeWork|Report|Product|Recipe|Event|Review|Book|Movie|VideoObject|Course|JobPosting|Dataset|SoftwareApplication)$/.test(Type);
+	}) ) {
+		return 1;
+	}
+	if ( Types.some(function(Type) {
+		return /^(WebSite|Organization|Corporation|NewsMediaOrganization|Brand|SiteNavigationElement|WPHeader|WPFooter|WPSideBar|WPAdBlock|BreadcrumbList)$/.test(Type);
+	}) ) {
+		return false;
+	}
+	return 2;
 }
 
-// The first non-empty value, trying selectors in order of preference.
+// The first non-empty value, trying selectors in order of preference,
+// and the best-ranked elements first within each.
 function flame_page_first(Selectors) {
 	var Elements, Value;
 	for ( var i = 0; i < Selectors.length; i++ ) {
 		Elements = document.querySelectorAll(Selectors[i]);
-		for ( var j = 0; j < Elements.length; j++ ) {
-			if ( flame_page_nested(Elements[j]) ) {
-				continue;
-			}
-			Value = flame_page_value(Elements[j]);
-			if ( Value ) {
-				return Value;
+		for ( var Rank = 1; Rank <= 2; Rank++ ) {
+			for ( var j = 0; j < Elements.length; j++ ) {
+				if ( flame_page_rank(Elements[j]) !== Rank ) {
+					continue;
+				}
+				Value = flame_page_value(Elements[j]);
+				if ( Value ) {
+					return Value;
+				}
 			}
 		}
 	}

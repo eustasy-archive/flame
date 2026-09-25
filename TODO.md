@@ -68,4 +68,5 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 - [x] `flame.page.js` now stores the description and image `content` strings, not their DOM elements.
 - [x] `flame.page.js` reads microdata on ordinary elements (text, `src` or `href`), and an empty title falls back to `document.title`.
 - [x] `flame.page.js` tries each candidate until one has a value, only reads `name=` lookups from `<meta>` tags, and skips microdata on nested items such as an article's author.
+- [x] `flame.page.js` prefers microdata on the page's main item (`Article`, `WebPage`, `Product`, `mainEntity`, etc.) and ignores site-wide items such as `Organization` and `WebSite`.
 - [x] Removed `function.getElementsByAttribute.js`, which patched `HTMLElement.prototype`. `flame.page.js` uses `querySelectorAll` instead.
