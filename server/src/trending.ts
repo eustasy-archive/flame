@@ -7,7 +7,8 @@ import { fill, hex, number, query, type Row } from './analytics';
 import { json } from './respond';
 import { xml } from './xml';
 
-const Types = ['pageview', 'payment', 'subscription'] as const;
+// 'category' ranks the categories of pageviews, rather than a type of data.
+const Types = ['pageview', 'payment', 'subscription', 'category'] as const;
 type Type = (typeof Types)[number];
 
 // Analytics Engine keeps data for three months.
@@ -49,7 +50,7 @@ export function parameters(search: URLSearchParams): { error: string; format: Fo
 
 	const type = search.get('type') || 'pageview';
 	if (!(Types as readonly string[]).includes(type)) {
-		return failed('type must be pageview, payment or subscription.');
+		return failed('type must be pageview, payment, subscription or category.');
 	}
 
 	const domain = (search.get('domain') ?? '').toLowerCase();
@@ -79,8 +80,8 @@ export function parameters(search: URLSearchParams): { error: string; format: Fo
 	if (terms === undefined) {
 		return failed('terms must be a JSON list of up to 10 words, like ["fire","hose"]. Words can have letters, numbers, spaces, hyphens and underscores.');
 	}
-	if (terms.length && type !== 'pageview') {
-		return failed('terms only works with type=pageview.');
+	if (terms.length && type !== 'pageview' && type !== 'category') {
+		return failed('terms only works with type=pageview or type=category.');
 	}
 
 	let categories = whole(search.get('categories'), 5, MaxCategories);
@@ -93,6 +94,9 @@ export function parameters(search: URLSearchParams): { error: string; format: Fo
 	}
 
 	const category = search.get('category');
+	if (type === 'category' && category !== null && category !== '' && category !== 'false') {
+		return failed("category doesn't work with type=category.");
+	}
 	return {
 		parameters: {
 			type: type as Type,
@@ -161,7 +165,8 @@ export async function trending(request: Request, env: Env): Promise<Response> {
 	const run = (sql: string) => query(env, sql);
 	let results: Record<string, unknown>[] | Record<string, unknown>;
 	try {
-		results = p.type === 'pageview' ? await pageviews(run, env, p) : await values(run, env, p);
+		results =
+			p.type === 'pageview' ? await pageviews(run, env, p) : p.type === 'category' ? await categories(run, env, p) : await values(run, env, p);
 	} catch (error) {
 		console.error(error);
 		return failure(p.format, 502, "Couldn't query Analytics Engine.");
@@ -232,6 +237,24 @@ async function pageviews(run: Query, env: Env, p: Parameters): Promise<Record<st
 		results[text(row.category)] = pages(each[i], number(row.count), p);
 	});
 	return results;
+}
+
+// The most viewed categories of pageviews, as an array. Percentages are of all
+// matching pageviews, including those without a category.
+async function categories(run: Query, env: Env, p: Parameters): Promise<Record<string, unknown>[]> {
+	const values = { ...common(env, p), type: 'pageview' };
+	const [rows, totals] = await Promise.all([run(fill(categoriesSql, { ...values, limit: p.count })), run(fill(totalSql, values))]);
+	const total = number(totals[0]?.count);
+	const top = number(rows[0]?.count);
+	return rows.map((row) => {
+		const count = number(row.count);
+		return {
+			category: text(row.category),
+			count,
+			count_percentage: percent(count, total),
+			count_relative: percent(count, top),
+		};
+	});
 }
 
 // Rows of pages, as results. Percentages are of the total given.

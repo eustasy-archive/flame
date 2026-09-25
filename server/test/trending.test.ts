@@ -210,6 +210,49 @@ describe('/trending', () => {
 		});
 	});
 
+	describe('type=category', () => {
+		let fetch: ReturnType<typeof api>;
+		beforeEach(() => {
+			fetch = api({
+				categories: [
+					{ category: 'News', count: '40' },
+					{ category: 'Sport', count: '10' },
+				],
+				total: { count: '60' },
+			});
+		});
+
+		it('ranks the categories of pageviews', async () => {
+			const { body } = await get('domain=blog.example.com&type=category&range=86400');
+			expect(body).toEqual({
+				success: true,
+				warning: false,
+				error: false,
+				count: 2,
+				results: [
+					{ category: 'News', count: 40, count_percentage: 67, count_relative: 100 },
+					{ category: 'Sport', count: 10, count_percentage: 17, count_relative: 25 },
+				],
+			});
+		});
+
+		it('queries pageviews, with count as the number of categories', async () => {
+			await get(`domain=blog.example.com&type=category&count=3&terms=${encodeURIComponent('["fire"]')}`);
+			const [categories, total] = sent(fetch);
+			expect(categories).toContain("AND blob1 = 'pageview'");
+			expect(categories).toContain("AND blob3 != ''");
+			expect(categories).toContain('LIMIT 3');
+			expect(categories).toContain("position('fire' IN lowerUTF8(blob5))");
+			expect(total).toContain("AND blob1 = 'pageview'");
+			expect(total).toContain("position('fire' IN lowerUTF8(blob5))");
+		});
+
+		it('lists categories as <result> elements in XML', async () => {
+			const response = await exports.default.fetch('https://flame.example.com/trending?domain=blog.example.com&type=category&format=xml');
+			expect(await response.text()).toContain('\t\t<result>\n\t\t\t<category>News</category>\n\t\t\t<count>40</count>');
+		});
+	});
+
 	describe('as XML', () => {
 		async function getXml(query: string) {
 			const response = await exports.default.fetch(`https://flame.example.com/trending?format=xml&${query}`);
@@ -303,7 +346,8 @@ describe('/trending', () => {
 	});
 
 	it.each([
-		['type=visits&domain=blog.example.com', 'type must be pageview, payment or subscription.'],
+		['type=visits&domain=blog.example.com', 'type must be pageview, payment, subscription or category.'],
+		['type=category&category=News&domain=blog.example.com', "category doesn't work with type=category."],
 		['', 'domain must be a hostname, like example.com.'],
 		["domain=blog.example.com'--", 'domain must be a hostname, like example.com.'],
 		['domain=blog.example.com&range=-1', 'range must be a number of seconds, or __MAX__.'],
@@ -317,7 +361,7 @@ describe('/trending', () => {
 		[`domain=blog.example.com&terms=${encodeURIComponent('["a\\\\b"]')}`, TermsError],
 		[`domain=blog.example.com&terms=${encodeURIComponent('[""]')}`, TermsError],
 		[`domain=blog.example.com&terms=${encodeURIComponent(JSON.stringify(Array(11).fill('a')))}`, TermsError],
-		[`domain=blog.example.com&type=payment&terms=${encodeURIComponent('["fire"]')}`, 'terms only works with type=pageview.'],
+		[`domain=blog.example.com&type=payment&terms=${encodeURIComponent('["fire"]')}`, 'terms only works with type=pageview or type=category.'],
 	])('rejects %s', async (query, error) => {
 		const fetch = api({});
 		const { status, body } = await get(query);

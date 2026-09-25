@@ -61,13 +61,13 @@ GET /trending?domain=blog.example.com&range=86400&count=5
 | Key | Type | Default | Description |
 |---|---|---|---|
 | domain | String | _required_ | The domain to rank pages for, e.g. `blog.example.com`. It must be in `ALLOWED_DOMAINS`. The client defaults it to the page's domain. |
-| type | String | `pageview` | `pageview`, `payment` or `subscription`. |
+| type | String | `pageview` | `pageview`, `payment` or `subscription`, or `category` to rank the categories of pageviews. |
 | count | Integer | `10` | How many results to return, up to 100. `__MAX__` for 100. |
 | range | Integer | `3600` | How many seconds back to look, up to 90 days (7776000). `__MAX__` for 90 days. |
 | format | String | `json` | `json` or `xml`. |
 | category | String | _none_ | Only count this category. If empty or `false`, categories are ignored. If `__ALL__`, results are given all together as `__ALL__`, then for each category. See the results below. |
 | categories | Integer | `5` | With `category=__ALL__`, how many of the most viewed categories to rank pages in, up to 10. `__MAX__` for 10. Payments and subscriptions use `count` instead. |
-| terms | String | _none_ | A JSON list of up to 10 words, like `["fire","hose"]`. Only pages whose title or URL contains one of them are ranked, ignoring case. Words can only have letters, numbers, spaces, hyphens and underscores. Pageviews only. |
+| terms | String | _none_ | A JSON list of up to 10 words, like `["fire","hose"]`. Only pages whose title or URL contains one of them are ranked, ignoring case. Words can only have letters, numbers, spaces, hyphens and underscores. Pageviews and categories only. |
 
 #### Response
 
@@ -106,6 +106,17 @@ With `category=__ALL__`, an object of arrays instead: `__ALL__`, the most viewed
 | count | Integer | 1203 | How many views it had in the range. |
 | count_percentage | Percentage | 23 | Its share of all matching views in the range, or of its category's with `category=__ALL__`. |
 | count_relative | Percentage | 73 | Its views as a percentage of the top result's, in the same list. |
+
+#### Results for categories
+
+With `type=category`, an array of the most viewed categories of pageviews, as many as `count`. Pages without a category aren't ranked, but count towards the percentages. `category` can't be used with it.
+
+| Key | Type | Example | Description |
+|---|---|---|---|
+| category | String | `'News'` | |
+| count | Integer | 1203 | How many views pages in it had in the range. |
+| count_percentage | Percentage | 23 | Its share of all matching views in the range. |
+| count_relative | Percentage | 73 | Its views as a percentage of the top category's. |
 
 #### Results for payments and subscriptions
 

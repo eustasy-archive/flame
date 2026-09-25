@@ -65,6 +65,13 @@ flame('trending', { type: 'pageview', count: 5, range: 86400, terms: ['fire', 'h
 		console.log(Page.title, Page.url, Page.count);
 	});
 });
+
+// The most viewed categories, from the page's section or a track call.
+flame('trending', { type: 'category', range: 86400 }, function(Trending) {
+	Trending.results.forEach(function(Category) {
+		console.log(Category.category, Category.count);
+	});
+});
 ```
 
 ## Automatic tracking
