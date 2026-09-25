@@ -85,19 +85,4 @@ flame('trending', { type: 'pageview', count: 5, range: 86400, terms: ['fire', 'h
 
 [`sql/README.md`](../sql/README.md) lists where each one is stored.
 
-## Files
-
-| File | Contents |
-|---|---|
-| `flame.js` | The entry point. It runs the snippet's queue and each command, and sends data. |
-| `snippet.js`, `snippet.min.js` | The snippet, readable and minified. |
-| `flame.*.js` | One collector each, listed above. |
-| `lib.platform.js` | [Platform.js](https://github.com/bestiejs/platform.js) 1.3.6, unmodified. |
-| `test/` | Tests, run in Vitest with jsdom. |
-
-## Building and testing
-
-The tooling lives in [`server/`](../server/README.md), so run these from there.
-
-- `npm run build` bundles the client into `server/dist/public/flame.js` and a minified `flame.min.js`. The bundle is wrapped in a function, so it adds nothing to the page, and `define` is compiled out so Platform.js can't register with an AMD loader like RequireJS.
-- `npm test` builds the client, then runs its tests alongside the Worker's. The client has no `package.json`, so its tests use Vitest's globals rather than importing from `vitest`. The bundle and snippet tests run the built files, as a browser would.
+To work on the client, see [CONTRIBUTING.md](../CONTRIBUTING.md).

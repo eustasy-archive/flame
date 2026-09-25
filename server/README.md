@@ -1,10 +1,10 @@
 # Server
 
-The Cloudflare Worker, in TypeScript. It serves the [client](../client/README.md) at `/flame.js`, stores pageviews and events from `/track` in Workers Analytics Engine, and answers `/trending` from Analytics Engine's SQL API. This folder also has the tooling for the client.
+The Cloudflare Worker, in TypeScript. It serves the [client](../client/README.md) at `/flame.js`, stores pageviews and events from `/track` in Workers Analytics Engine, and answers `/trending` from Analytics Engine's SQL API. To work on it, see [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Set up
 
-1. **Install and test.** `npm install`, then `npm test`. The tests build the client first.
+1. **Install.** Run `npm install` in this folder.
 2. **Configure [`wrangler.jsonc`](wrangler.jsonc).**
    - `ALLOWED_DOMAINS`: the sites that may send data and read trending, separated by commas. `*.example.com` matches any subdomain of example.com, but not example.com itself. Nothing is allowed if it's empty.
    - `CF_ACCOUNT_ID`: your Cloudflare account ID, which `/trending` needs to query Analytics Engine.
@@ -12,32 +12,6 @@ The Cloudflare Worker, in TypeScript. It serves the [client](../client/README.md
 3. **Add an API token for `/trending`.** Create a Cloudflare API token with *Account Analytics: Read*, then run `npx wrangler secret put CF_API_TOKEN`. For `npm run dev`, copy `.dev.vars.example` to `.dev.vars` and put it there.
 4. **Deploy.** `npx wrangler deploy` builds the client and deploys the Worker. Analytics Engine creates the dataset when the first data point is written. Give it a [custom domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/), since `/trending`'s cache only works there, not on `workers.dev`.
 5. **Embed [the snippet](../client/README.md#the-snippet)** on each page, with your Worker's hostname in place of `flame.example.com`, then add your `flame(…)` calls after it.
-
-## Development
-
-| Command | What it does |
-|---|---|
-| `npm run dev` | Runs the Worker locally with `wrangler dev`, building the client first. Data written there goes nowhere, but `/trending` queries the real Analytics Engine if it's configured. |
-| `npm test` | Builds the client, then runs the Worker's tests (in the Workers runtime) and the client's (in jsdom). |
-| `npm run build` | Bundles the client into `dist/public/`. |
-| `npm run check` | Generates the Worker's types with `wrangler types`, then type-checks `src/` and `test/`. |
-
-[CI](../.github/workflows/ci.yml) runs the build, tests, type check and a dry-run deploy on every push to `main` and every pull request.
-
-## Files
-
-| File | Contents |
-|---|---|
-| `src/index.ts` | Routing, and `/flame.js`. |
-| `src/track.ts` | `/track`. |
-| `src/datapoint.ts` | The data point layout, and turning a `/track` body into a data point. |
-| `src/trending.ts` | `/trending`: checking its parameters and shaping its results. |
-| `src/analytics.ts` | Filling in the [`sql/`](../sql/README.md) templates and querying the SQL API. |
-| `src/allowed.ts` | The `ALLOWED_DOMAINS` allowlist. |
-| `src/cors.ts` | CORS headers and preflights. |
-| `src/xml.ts` | `/trending`'s XML format. |
-| `src/respond.ts` | JSON and error responses. |
-| `test/` | Tests, run in the Workers runtime by Vitest and `@cloudflare/vitest-plugin`. |
 
 ## API
 

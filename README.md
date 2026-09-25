@@ -37,4 +37,4 @@ Pageview and event tracking for your own sites, with an API for their trending p
 
    Or from anywhere else, with `GET https://flame.example.com/trending?domain=example.com&range=86400&count=5`.
 
-The [client](client/README.md#commands) and [server](server/README.md#api) READMEs cover the rest, and [developing Flame](server/README.md#development) itself.
+The [client](client/README.md#commands) and [server](server/README.md#api) READMEs cover the rest. To work on Flame itself, see [CONTRIBUTING.md](CONTRIBUTING.md).
