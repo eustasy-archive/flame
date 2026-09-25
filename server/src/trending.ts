@@ -3,7 +3,8 @@ import totalSql from '../../sql/trending-total.sql';
 import valuesSql from '../../sql/trending-values.sql';
 import { allowed, allowedOrigin } from './allowed';
 import { fill, hex, number, query, type Row } from './analytics';
-import { failure, json } from './respond';
+import { json } from './respond';
+import { xml } from './xml';
 
 const Types = ['pageview', 'payment', 'subscription'] as const;
 type Type = (typeof Types)[number];
@@ -18,7 +19,10 @@ export type Parameters = {
 	range: number;
 	// false to ignore categories, '__ALL__' for each category, or one category.
 	category: string | false;
+	format: Format;
 };
+
+type Format = 'json' | 'xml';
 
 // The most results for a range, from the README's limits table.
 export function maxCount(range: number): number {
@@ -36,22 +40,29 @@ export function maxCount(range: number): number {
 
 // Read and check GET /trending's query string. Everything that goes into SQL
 // is checked here, or is the category, which only goes in as hex.
-export function parameters(search: URLSearchParams): { error: string } | { parameters: Parameters; warnings: string[] } {
+export function parameters(search: URLSearchParams): { error: string; format: Format } | { parameters: Parameters; warnings: string[] } {
 	const warnings: string[] = [];
+
+	// Read first, so any other error can be given in the format asked for.
+	const format = search.get('format') || 'json';
+	if (format !== 'json' && format !== 'xml') {
+		return { error: 'format must be json or xml.', format: 'json' };
+	}
+	const failed = (error: string) => ({ error, format: format as Format });
 
 	const type = search.get('type') || 'pageview';
 	if (!(Types as readonly string[]).includes(type)) {
-		return { error: 'type must be pageview, payment or subscription.' };
+		return failed('type must be pageview, payment or subscription.');
 	}
 
 	const domain = (search.get('domain') ?? '').toLowerCase();
 	if (!/^[a-z0-9.-]{1,253}$/.test(domain)) {
-		return { error: 'domain must be a hostname, like example.com.' };
+		return failed('domain must be a hostname, like example.com.');
 	}
 
 	let range = whole(search.get('range'), 3600, MaxRange);
 	if (range === undefined) {
-		return { error: 'range must be a number of seconds, or __MAX__.' };
+		return failed('range must be a number of seconds, or __MAX__.');
 	}
 	if (range > MaxRange) {
 		warnings.push(`range can't be more than 28 days (${MaxRange} seconds), so it was cut to that.`);
@@ -60,23 +71,15 @@ export function parameters(search: URLSearchParams): { error: string } | { param
 
 	let count = whole(search.get('count'), 10, maxCount(range));
 	if (count === undefined) {
-		return { error: 'count must be a whole number, or __MAX__.' };
+		return failed('count must be a whole number, or __MAX__.');
 	}
 	if (count > maxCount(range)) {
 		warnings.push(`count can't be more than ${maxCount(range)} for that range, so it was cut to that.`);
 		count = maxCount(range);
 	}
 
-	const format = search.get('format') || 'json';
-	if (format === 'xml') {
-		return { error: "format=xml isn't supported yet." };
-	}
-	if (format !== 'json') {
-		return { error: 'format must be json or xml.' };
-	}
-
 	if (search.has('terms')) {
-		return { error: "terms isn't supported yet." };
+		return failed("terms isn't supported yet.");
 	}
 
 	const category = search.get('category');
@@ -87,6 +90,7 @@ export function parameters(search: URLSearchParams): { error: string } | { param
 			count,
 			range,
 			category: category === null || category === '' || category === 'false' ? false : category,
+			format,
 		},
 		warnings,
 	};
@@ -110,17 +114,17 @@ function whole(value: string | null, fallback: number, max: number): number | un
 export async function trending(request: Request, env: Env): Promise<Response> {
 	const checked = parameters(new URL(request.url).searchParams);
 	if ('error' in checked) {
-		return failure(400, checked.error);
+		return failure(checked.format, 400, checked.error);
 	}
 	const { parameters: p, warnings } = checked;
 	if (!allowedOrigin(request, env)) {
-		return failure(403, "This site isn't allowed to read trending data.");
+		return failure(p.format, 403, "This site isn't allowed to read trending data.");
 	}
 	if (!allowed(p.domain, env)) {
-		return failure(403, `${p.domain} isn't allowed.`);
+		return failure(p.format, 403, `${p.domain} isn't allowed.`);
 	}
 	if (!env.CF_ACCOUNT_ID || !env.CF_API_TOKEN) {
-		return failure(500, 'The Worker needs CF_ACCOUNT_ID and CF_API_TOKEN to query Analytics Engine.');
+		return failure(p.format, 500, 'The Worker needs CF_ACCOUNT_ID and CF_API_TOKEN to query Analytics Engine.');
 	}
 
 	let results: Record<string, unknown>[] | Record<string, Record<string, number>>;
@@ -128,9 +132,10 @@ export async function trending(request: Request, env: Env): Promise<Response> {
 		results = p.type === 'pageview' ? await pageviews(env, p) : await values(env, p);
 	} catch (error) {
 		console.error(error);
-		return failure(502, "Couldn't query Analytics Engine.");
+		return failure(p.format, 502, "Couldn't query Analytics Engine.");
 	}
-	return json(
+	return respond(
+		p.format,
 		{
 			success: true,
 			warning: warnings.length ? warnings.join(' ') : false,
@@ -141,6 +146,17 @@ export async function trending(request: Request, env: Env): Promise<Response> {
 		200,
 		{ 'Cache-Control': 'public, max-age=60' },
 	);
+}
+
+function respond(format: Format, body: Record<string, unknown>, status: number, headers: Record<string, string> = {}): Response {
+	if (format === 'json') {
+		return json(body, status, headers);
+	}
+	return new Response(xml(body), { status, headers: { 'Content-Type': 'application/xml; charset=utf-8', ...headers } });
+}
+
+function failure(format: Format, status: number, error: string): Response {
+	return respond(format, { success: false, warning: false, error }, status);
 }
 
 // The values every template shares.

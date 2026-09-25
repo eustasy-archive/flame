@@ -118,6 +118,59 @@ describe('/trending', () => {
 		});
 	});
 
+	describe('as XML', () => {
+		async function getXml(query: string) {
+			const response = await exports.default.fetch(`https://flame.example.com/trending?format=xml&${query}`);
+			return { status: response.status, type: response.headers.get('Content-Type'), body: await response.text() };
+		}
+
+		it('lists pages as <result> elements', async () => {
+			api({ pageviews: [{ data: 'https://blog.example.com/a?x=1&y=2', category: '', title: 'Fish & <Chips>', description: '', image: '', count: '3' }], total: { count: '3' } });
+			const { status, type, body } = await getXml('domain=blog.example.com');
+			expect(status).toBe(200);
+			expect(type).toBe('application/xml; charset=utf-8');
+			expect(body).toBe(
+				[
+					'<?xml version="1.0" encoding="UTF-8"?>',
+					'<response>',
+					'\t<success>true</success>',
+					'\t<warning>false</warning>',
+					'\t<error>false</error>',
+					'\t<count>1</count>',
+					'\t<results>',
+					'\t\t<result>',
+					'\t\t\t<url>https://blog.example.com/a?x=1&amp;y=2</url>',
+					'\t\t\t<title>Fish &amp; &lt;Chips&gt;</title>',
+					'\t\t\t<image></image>',
+					'\t\t\t<description></description>',
+					'\t\t\t<domain>blog.example.com</domain>',
+					'\t\t\t<category></category>',
+					'\t\t\t<count>3</count>',
+					'\t\t\t<count_percentage>100</count_percentage>',
+					'\t\t\t<count_relative>100</count_relative>',
+					'\t\t</result>',
+					'\t</results>',
+					'</response>',
+					'',
+				].join('\n'),
+			);
+		});
+
+		it('lists categories as <category name="…"> elements', async () => {
+			api({ values: [{ category: 'OS X', count: '150', average: 420 }], total: { count: '150', average: 420 } });
+			const { body } = await getXml('domain=blog.example.com&type=payment&category=__ALL__');
+			expect(body).toContain('\t\t<category name="__ALL__">\n\t\t\t<count>150</count>');
+			expect(body).toContain('\t\t<category name="OS X">\n\t\t\t<count>150</count>\n\t\t\t<average>420</average>');
+		});
+
+		it('gives errors as XML', async () => {
+			const { status, body } = await getXml('domain=evil.net');
+			expect(status).toBe(403);
+			expect(body).toContain('<success>false</success>');
+			expect(body).toContain("<error>evil.net isn&apos;t allowed.</error>");
+		});
+	});
+
 	describe('payments and subscriptions', () => {
 		// The example from the README.
 		beforeEach(() => {

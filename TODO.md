@@ -14,7 +14,6 @@ Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` 
 
 - [x] Scaffold the Worker in `server/` (`wrangler.jsonc`, `package.json`, entry point).
 - [x] Return a 404 for unknown paths.
-- [ ] Support `format=xml` in `/trending`.
 - [ ] Support `terms` in `/trending`.
 
 ## Analytics Engine (`sql/`)
@@ -63,3 +62,4 @@ Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` 
 - [x] `/track` and `/trending` answer CORS preflights and let pages on allowed sites read their responses. Other sites get no CORS headers.
 - [x] `GET /trending` ranks pageviews, or sums payments and subscriptions by category, through the Analytics Engine SQL API. It applies the README's limits (28 days at most, and fewer results for longer ranges), counts with `_sample_interval`, and only answers for allowed domains. It needs `CF_ACCOUNT_ID` and a `CF_API_TOKEN` secret.
 - [x] The `/trending` queries are `.sql` templates in `sql/`, which the Worker imports as text. Request values never go into them as they are: only checked types, integers and allowlisted hostnames, with categories compared as hex.
+- [x] `/trending?format=xml` returns the same response as XML, errors included. Pages are `<result>` elements, and categories are `<category name="…">`.
