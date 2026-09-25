@@ -133,6 +133,7 @@ function collect() {
 		url:         pageUrl(),
 		referrer:    document.referrer,
 		title:       Page.title,
+		category:    Page.category,
 		description: Page.description,
 		image:       Page.image,
 		// Only when User-Agent Client Hints name it. Otherwise the server reads
@@ -148,7 +149,8 @@ function collect() {
 }
 
 // flame('track', type, data, category)
-// Pageviews and 404s default their data to the page's URL. Payments and subscriptions
+// Pageviews and 404s default their data to the page's URL, and pageviews their
+// category to the page's section. Payments and subscriptions
 // take an amount as their data, as an integer (e.g. pence) rather than a float.
 function track(Type, Data, Category) {
 	var Payload;
@@ -162,7 +164,8 @@ function track(Type, Data, Category) {
 		Data = ( Payload.type == 'pageview' || Payload.type == '404' ) ? Payload.url : '';
 	}
 	Payload.data = String( Data );
-	Payload.category = Category ? String( Category ) : '';
+	// Pageviews without a category take the page's section, if it has one.
+	Payload.category = Category ? String( Category ) : ( Payload.type == 'pageview' ? Payload.category : '' );
 	Payload.value = ( Payload.type == 'payment' || Payload.type == 'subscription' ) ? ( Number( Data ) || 0 ) : 0;
 	send('/track', Payload);
 }

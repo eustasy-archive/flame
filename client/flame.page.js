@@ -72,6 +72,32 @@ function firstValue(Selectors) {
 	return '';
 }
 
+// A property from the page's schema.org JSON-LD, which many sites use instead of
+// microdata. Only top-level items are read, including those in an @graph, so a
+// nested item's properties, like an author's, aren't mistaken for the page's.
+function jsonLd(Name) {
+	var Scripts = document.querySelectorAll('script[type="application/ld+json"]');
+	var Data, Items, Value;
+	for ( var i = 0; i < Scripts.length; i++ ) {
+		try {
+			Data = JSON.parse(Scripts[i].textContent);
+		} catch ( e ) {
+			continue;
+		}
+		Items = [].concat(Data);
+		for ( var j = 0; j < Items.length; j++ ) {
+			if ( Items[j] && Items[j]['@graph'] ) {
+				Items = Items.concat(Items[j]['@graph']);
+			}
+			Value = Items[j] && [].concat(Items[j][Name])[0];
+			if ( typeof Value == 'string' && Value.trim() ) {
+				return Value.replace(/\s+/g, ' ').trim();
+			}
+		}
+	}
+	return '';
+}
+
 export function page() {
 	return {
 		title: firstValue([
@@ -89,6 +115,11 @@ export function page() {
 			'[property~="og:image"]',
 			'[itemprop~="image"]',
 			'meta[name="twitter:image"]'
-		])
+		]),
+		// The section a page is in, which pageviews use as their category.
+		category: firstValue([
+			'[property~="article:section"]',
+			'[itemprop~="articleSection"]'
+		]) || jsonLd('articleSection')
 	};
 }

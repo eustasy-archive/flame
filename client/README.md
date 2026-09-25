@@ -40,7 +40,7 @@ Sends one pageview or event to `/track`, along with everything [collected](#what
 |---|---|---|
 | type | `pageview` | `pageview`, `payment`, `subscription`, `404`, or a type of your own, such as `event`. [Automatic tracking](#automatic-tracking) also sends `outbound` and `download`. |
 | data | The page's URL, for pageviews and 404s | What's being tracked. Pageviews and 404s default to the page's URL, without its hash unless `track-hash` is on. For payments and subscriptions, it's the amount, as an integer (e.g. pence) rather than a float. |
-| category | _none_ | A category to group data by. |
+| category | The page's section, for pageviews | A category to group data by. Pageviews without one take the page's section, from `article:section`, or schema.org's `articleSection` in microdata or JSON-LD, so automatic pageviews get one too. |
 
 ### flame('setting', name, value)
 
@@ -97,7 +97,7 @@ The client stores nothing in the browser: no cookies, and nothing in localStorag
 | Visitor | The Worker. A visitor's ID is a hash of a daily salt, the site's domain, and the visitor's IP address and user agent, [as Plausible counts visitors](https://plausible.io/data-policy). Salts are deleted after their day, so an ID can't be traced back to an IP address, or linked to the same visitor on another day. |
 | Search engine and query | The Worker, from the page's referrer. |
 | Phone or tablet | `flame.device.js` |
-| Page title, description and image | `flame.page.js`, from Open Graph, microdata and Twitter tags |
+| Page title, description and image, and section as the category | `flame.page.js`, from Open Graph, microdata, JSON-LD and Twitter tags |
 | Screen size, colour depth and orientation, and viewport size | `flame.display.js` |
 | Language | `flame.language.js`, or the `Accept-Language` header |
 | Timezone offset and daylight saving time | `flame.timezone.js` |

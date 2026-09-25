@@ -59,6 +59,14 @@ describe('flame()', () => {
 		expect(Payload).toMatchObject({ type: 'event', data: 'signup', category: 'Newsletter', value: 0 });
 	});
 
+	it("gives pageviews the page's section as their category", async () => {
+		document.head.innerHTML += '<meta property="article:section" content="Sport">';
+		load([ [ 'track', 'pageview' ], [ 'track', 'pageview', null, 'Chosen' ], [ 'track', 'event', 'play' ] ]);
+		var Sent = await sent();
+		expect(Sent.map(([ , Payload ]) => Payload.category)).toEqual([ 'Sport', 'Chosen', '' ]);
+		expect(Sent[1][1].data).toBe('https://blog.example.com/post?id=1');
+	});
+
 	it('records payment amounts as a value', async () => {
 		load([ [ 'track', 'payment', 1200, 'Linux' ] ]);
 		var [ [ , Payload ] ] = await sent();

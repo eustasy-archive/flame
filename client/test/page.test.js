@@ -39,3 +39,31 @@ describe('page', () => {
 		expect([ Page.title, Page.description, Page.image ]).toEqual(expected);
 	});
 });
+
+describe('page category', () => {
+	beforeEach(() => {
+		jsdom.reconfigure({ url: 'https://blog.example.com/post/1' });
+	});
+
+	function category(Head, Body = '') {
+		document.head.innerHTML = '<title>Doc</title>' + Head;
+		document.body.innerHTML = Body;
+		return page().category;
+	}
+
+	var Ld = (Data) => '<script type="application/ld+json">' + JSON.stringify(Data) + '</script>';
+
+	it.each([
+		[ 'Open Graph', '<meta property="article:section" content="Sport">', '', 'Sport' ],
+		[ 'microdata', '', '<article itemscope itemtype="https://schema.org/NewsArticle"><meta itemprop="articleSection" content="Politics"></article>', 'Politics' ],
+		[ 'JSON-LD', Ld({ '@context': 'https://schema.org', '@type': 'Article', articleSection: 'Science' }), '', 'Science' ],
+		[ 'JSON-LD in an @graph', Ld({ '@graph': [ { '@type': 'WebSite', name: 'Blog' }, { '@type': 'Article', articleSection: [ 'Travel', 'Food' ] } ] }), '', 'Travel' ],
+		[ 'JSON-LD in a list', Ld([ { '@type': 'BreadcrumbList' }, { '@type': 'BlogPosting', articleSection: ' Long   read ' } ]), '', 'Long read' ],
+		[ 'Open Graph before JSON-LD', '<meta property="article:section" content="Sport">' + Ld({ articleSection: 'Science' }), '', 'Sport' ],
+		[ 'broken JSON-LD, then good', '<script type="application/ld+json">{nope</script>' + Ld({ articleSection: 'Science' }), '', 'Science' ],
+		[ 'a nested item only', Ld({ '@type': 'WebPage', mainEntity: { articleSection: 'Hidden' } }), '', '' ],
+		[ 'nothing', '', '', '' ]
+	])('reads it from %s', (name, Head, Body, expected) => {
+		expect(category(Head, Body)).toBe(expected);
+	});
+});
