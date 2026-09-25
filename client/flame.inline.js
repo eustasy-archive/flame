@@ -21,7 +21,7 @@
 	document,                                          // x
 	'script',                                          // t
 	'https://extinguisher.io/api/flame/script.js?v=1', // i
-	'extinguisher'                                     // n
+	'flame'                                            // n
 	// New script element                              // g
 	// First script element in document                // u
 );

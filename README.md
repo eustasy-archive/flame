@@ -3,12 +3,12 @@
 Fetches an asynchronous code snippet (which is surprisingly [well supported](http://caniuse.com/#feat=script-async)) that does all of the work once you've made your decisions. Not something you access directly, you use the snippet from [setup](SETUP.md).
 
 ```
-extinguisher('setting', 'dnt-honor', true);
-extinguisher('setting', 'session', false);
-extinguisher('track', 'pageview', 'Funny');
-extinguisher('track', 'payment', 1200, 'Linux');
-extinguisher('trending', 7200);
-console.log(window.extinguisher.q);
+flame('setting', 'dnt-honor', true);
+flame('setting', 'session', false);
+flame('track', 'pageview', 'Funny');
+flame('track', 'payment', 1200, 'Linux');
+flame('trending', 7200);
+console.log(window.flame.q);
 ```
 
 ##### Operating System (Version) & Browser & Browser Version & Rendering Engine
@@ -38,7 +38,7 @@ Server-side
 ### get /trending
 
 ```
-extinguisher('trending', 'pageview', location.host, '10', '__MAX__', 'json');
+flame('trending', 'pageview', location.host, '10', '__MAX__', 'json');
 ```
 
 #### Request

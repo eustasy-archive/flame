@@ -30,7 +30,7 @@ Flame is an unfinished 2015 prototype. Nothing works end-to-end yet: the snippet
 ## To do
 
 ### Core
-- [ ] Consume the `extinguisher.q` command queue in the served script.
+- [ ] Consume the `flame.q` command queue in the served script.
 - [ ] Send collected data to the server (`navigator.sendBeacon` / `fetch`).
 - [ ] Implement `PUT /track`.
 - [ ] Look up location in `/track` with MaxMind GeoLite2. Only trust `X-Forwarded-For` from known proxies.
