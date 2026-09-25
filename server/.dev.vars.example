@@ -1,0 +1,3 @@
+# Copy this to .dev.vars for `wrangler dev`. .dev.vars is gitignored: never commit it.
+# An API token with Account Analytics Read, for /trending to query Analytics Engine.
+CF_API_TOKEN=

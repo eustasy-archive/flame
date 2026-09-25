@@ -1,6 +1,7 @@
 import { preflight, withCors } from './cors';
 import { notFound } from './respond';
 import { track } from './track';
+import { trending } from './trending';
 
 export default {
 	async fetch(request, env): Promise<Response> {
@@ -13,6 +14,8 @@ export default {
 					return preflight(request, env, ['PUT', 'POST']);
 				}
 				return withCors(request, env, only(request, ['PUT', 'POST']) ?? (await track(request, env)));
+			case '/trending':
+				return only(request, ['GET']) ?? trending(request, env);
 		}
 		return notFound();
 	},

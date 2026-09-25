@@ -8,6 +8,9 @@ export default defineConfig({
 				plugins: [
 					cloudflareTest({
 						wrangler: { configPath: './wrangler.jsonc' },
+						miniflare: {
+							bindings: { CF_ACCOUNT_ID: 'test-account', CF_API_TOKEN: 'test-token' },
+						},
 					}),
 				],
 				test: {

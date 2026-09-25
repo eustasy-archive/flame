@@ -11,11 +11,11 @@
 		"wrangler": "^4.141.0"
 	},
 	"scripts": {
-		"postinstall": "wrangler types",
+		"postinstall": "wrangler types --strict-vars=false",
 		"build": "esbuild ../client/flame.js --bundle --format=iife --target=es2017 --define:define=undefined --log-level=warning --outfile=dist/public/flame.js && esbuild ../client/flame.js --bundle --format=iife --target=es2017 --define:define=undefined --log-level=warning --minify --outfile=dist/public/flame.min.js",
 		"dev": "wrangler dev",
 		"pretest": "npm run build",
 		"test": "vitest run",
-		"check": "wrangler types && tsc -p . && tsc -p test"
+		"check": "wrangler types --strict-vars=false && tsc -p . && tsc -p test"
 	}
 }

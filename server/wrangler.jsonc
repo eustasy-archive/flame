@@ -6,6 +6,14 @@
 	"observability": {
 		"enabled": true
 	},
+	// The /trending queries in ../sql are imported as text.
+	"rules": [
+		{
+			"type": "Text",
+			"globs": ["**/*.sql"],
+			"fallthrough": true
+		}
+	],
 	// Builds the client bundle into dist/public before `wrangler dev` and `wrangler deploy`.
 	"build": {
 		"command": "npm run build"
@@ -14,7 +22,11 @@
 		// Hostnames that may send data to /track and read /trending, separated by
 		// commas. "*.example.com" matches any subdomain of example.com, but not
 		// example.com itself. Nothing is allowed if this is empty.
-		"ALLOWED_DOMAINS": "example.com, *.example.com"
+		"ALLOWED_DOMAINS": "example.com, *.example.com",
+		// /trending queries Analytics Engine's SQL API, which needs the account ID
+		// and the dataset's name, plus a CF_API_TOKEN secret.
+		"CF_ACCOUNT_ID": "",
+		"ANALYTICS_DATASET": "flame"
 	},
 	// Pageviews and events. See sql/README.md for the layout.
 	"analytics_engine_datasets": [
