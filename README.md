@@ -27,8 +27,10 @@ console.log(window.flame.q);
 
 ##### Operating System (Version) & Browser & Browser Version & Rendering Engine
 `client/lib.platform.js` ([Platform.js](https://github.com/bestiejs/platform.js))
-##### Session & Referrer & Search & Mobile & Visits (New User)
+##### Session & Referrer & Search & Visits (New User)
 `client/flame.session.js`
+##### Mobile
+`client/flame.device.js`
 ##### Page Title & Description & Image
 `client/flame.page.js`
 ##### Timezone

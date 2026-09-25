@@ -1,19 +1,9 @@
 import { session } from '../flame.session.js';
 
-var Agents = {
-	chrome:        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
-	iphone:        'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1',
-	androidPhone:  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36',
-	androidTablet: 'Mozilla/5.0 (Linux; Android 14; SM-X710) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
-	mac:           'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15'
-};
-
 // Load a page and start the session script on it.
-function visit({ url = 'https://blog.example.com/post', referrer = '', agent = Agents.chrome, touch = 0 } = {}) {
+function visit({ url = 'https://blog.example.com/post', referrer = '' } = {}) {
 	jsdom.reconfigure({ url: url });
 	Object.defineProperty(document, 'referrer', { configurable: true, get: () => referrer });
-	Object.defineProperty(navigator, 'userAgent', { configurable: true, get: () => agent });
-	Object.defineProperty(navigator, 'maxTouchPoints', { configurable: true, get: () => touch });
 	return session();
 }
 
@@ -33,7 +23,7 @@ describe('session', () => {
 	it('starts a session from a search engine', () => {
 		var Session = visit({ referrer: 'https://www.bing.com/search?q=fire+extinguisher&form=QBLH' });
 		expect(Session.id).toMatch(/^[0-9a-f]{32}$/);
-		expect(Session).toMatchObject({ visits: 1, pageviews: 1, new_visitor: true, mobile: false });
+		expect(Session).toMatchObject({ visits: 1, pageviews: 1, new_visitor: true });
 		expect(Session.search).toEqual({ engine: 'Bing', query: 'fire extinguisher' });
 		expect(Session.referrer).toEqual({ protocol: 'https', domain: 'www.bing.com', path: '/search', query: 'q=fire+extinguisher&form=QBLH', fragment: '' });
 	});
@@ -82,16 +72,5 @@ describe('session', () => {
 		[ 'no referrer', '', { engine: false, query: false } ]
 	])('reads search from %s', (name, referrer, expected) => {
 		expect(visit({ referrer: referrer }).search).toEqual(expected);
-	});
-
-	it.each([
-		[ 'iPhone', Agents.iphone, 0, 'phone' ],
-		[ 'Android phone', Agents.androidPhone, 0, 'phone' ],
-		[ 'Android tablet', Agents.androidTablet, 0, 'tablet' ],
-		[ 'iPad (reports as a Mac)', Agents.mac, 5, 'tablet' ],
-		[ 'Mac', Agents.mac, 0, false ],
-		[ 'Windows', Agents.chrome, 0, false ]
-	])('detects %s', (name, agent, touch, expected) => {
-		expect(visit({ agent: agent, touch: touch }).mobile).toBe(expected);
 	});
 });

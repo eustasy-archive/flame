@@ -122,6 +122,17 @@ describe('flame()', () => {
 		});
 	});
 
+	it('can leave out the session, until a site has consent to store it', async () => {
+		load([ [ 'setting', 'session', false ], [ 'track' ] ]);
+		expect(localStorage.getItem('flame_session')).toBeNull();
+		window.flame('setting', 'session', true);
+		window.flame('track');
+		var Sent = await sent();
+		expect(Sent[0][1].session).toBe(false);
+		expect(Sent[0][1]).toHaveProperty('mobile', false);
+		expect(Sent[1][1].session).toMatchObject({ visits: 1, pageviews: 1 });
+	});
+
 	it('warns about unknown settings', () => {
 		var Warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 		load([ [ 'setting', 'dnt-honor', true ] ]);

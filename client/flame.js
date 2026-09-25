@@ -3,6 +3,7 @@
 // so nothing here leaks onto the host page.
 import platform from './lib.platform.js';
 import { cores } from './flame.processor.js';
+import { device } from './flame.device.js';
 import { display } from './flame.display.js';
 import { language } from './flame.language.js';
 import { page } from './flame.page.js';
@@ -14,7 +15,10 @@ var Server = server();
 
 // Settings for flame('setting', name, value), with their defaults.
 var Settings = {
-	'honor-privacy-signals': true
+	'honor-privacy-signals': true,
+	// The session ID is kept in localStorage. Sites that need consent for that
+	// (in the EU, generally) can turn it off until they have it.
+	'session': true
 };
 
 // Commands for flame('command', …).
@@ -64,14 +68,14 @@ function currentSession() {
 function collect() {
 	var Display = display();
 	var Page = page();
-	var Session = currentSession();
+	var Session = Settings.session ? currentSession() : false;
 	return {
 		url:         location.href.split('#')[0],
 		referrer:    document.referrer,
 		title:       Page.title,
 		description: Page.description,
 		image:       Page.image,
-		session: {
+		session: Session && {
 			id:          Session.id,
 			visits:      Session.visits,
 			pageviews:   Session.pageviews,
@@ -84,7 +88,7 @@ function collect() {
 			engine:  platform.layout || false
 		},
 		os:       String( platform.os ),
-		mobile:   Session.mobile,
+		mobile:   device(),
 		screen:   Display.screen,
 		viewport: Display.viewport,
 		language: language(),

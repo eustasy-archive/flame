@@ -1,5 +1,5 @@
 ////	Session
-// Replaces session.js 0.4.1: session, visits, referrer, search engine and mobile detection.
+// Replaces session.js 0.4.1: session, visits, referrer and search engine.
 // Location is looked up server-side, and browser plugins are no longer detected.
 export function session() {
 
@@ -72,22 +72,6 @@ export function session() {
 		return Search;
 	}
 
-	function mobile() {
-		var Agent = navigator.userAgent;
-		if (
-			/iPad|Tablet|Kindle|Silk|PlayBook/i.test(Agent) ||
-			( /Android/i.test(Agent) && !/Mobile/i.test(Agent) ) ||
-			// iPadOS reports itself as a Mac.
-			( /Macintosh/i.test(Agent) && navigator.maxTouchPoints > 1 )
-		) {
-			return 'tablet';
-		}
-		if ( /Mobi|iPhone|iPod|Android|Windows Phone|BlackBerry|Opera Mini/i.test(Agent) ) {
-			return 'phone';
-		}
-		return false;
-	}
-
 	// Storage can be missing or throw (private browsing, blocked site data).
 	var Stored = null;
 	try {
@@ -130,8 +114,7 @@ export function session() {
 		visits:      Visitor.visits,
 		new_visitor: Visitor.visits == 1,
 		referrer:    Session.referrer, // Where the session started from, not this page's referrer.
-		search:      Session.search,
-		mobile:      mobile()
+		search:      Session.search
 	};
 
 }
