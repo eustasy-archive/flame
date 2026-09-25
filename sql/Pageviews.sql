@@ -59,10 +59,6 @@ CREATE TABLE IF NOT EXISTS `Pageviews` (
   `Viewport_Width` int(11) NOT NULL,
   `Timezone` varchar(8) NOT NULL,
   `Timezone_DST` tinyint(1) NOT NULL,
-  `Plugins_Flash` tinyint(1) NOT NULL,
-  `Plugins_Java` tinyint(1) NOT NULL,
-  `Plugins_Quicktime` tinyint(1) NOT NULL,
-  `Plugins_Silverlight` tinyint(1) NOT NULL,
   `Language` varchar(32) NOT NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 

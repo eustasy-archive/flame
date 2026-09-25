@@ -33,7 +33,6 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 - [ ] Add location columns (country, region, city) for the `request.cf` data.
 - [ ] Store `title`, `image` and `description`, which `/trending` documents but no table holds.
 - [ ] Add indexes on domain + time.
-- [ ] Drop the Flash, Java, QuickTime and Silverlight columns. Detection went with session.js.
 
 ## Client (`client/`)
 
@@ -64,3 +63,4 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 - [x] Fixed the README link to a `SETUP.md` that doesn't exist.
 - [x] Renamed the snippet's global function from `extinguisher()` to `flame()`.
 - [x] Snippets store the queue function's name in `window.flm`. It was `sher` in the unminified snippets and `isher` in the minified ones.
+- [x] Dropped the Flash, Java, QuickTime and Silverlight columns from `Pageviews` and `Events`.
