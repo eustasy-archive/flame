@@ -15,7 +15,10 @@ export default {
 				}
 				return withCors(request, env, only(request, ['PUT', 'POST']) ?? (await track(request, env)));
 			case '/trending':
-				return only(request, ['GET']) ?? trending(request, env);
+				if (request.method === 'OPTIONS') {
+					return preflight(request, env, ['GET']);
+				}
+				return withCors(request, env, only(request, ['GET']) ?? (await trending(request, env)));
 		}
 		return notFound();
 	},

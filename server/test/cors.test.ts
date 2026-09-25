@@ -1,5 +1,5 @@
 import { exports } from 'cloudflare:workers';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const track = (init: RequestInit) => exports.default.fetch('https://flame.example.com/track', init);
 
@@ -28,5 +28,32 @@ describe('CORS on /track', () => {
 		const response = await track({ method: 'POST', body: 'nope' });
 		expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
 		expect(response.headers.get('Vary')).toBe('Origin');
+	});
+});
+
+describe('CORS on /trending', () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it('answers preflights from allowed sites', async () => {
+		const response = await exports.default.fetch('https://flame.example.com/trending', { method: 'OPTIONS', headers: { Origin: 'https://example.com' } });
+		expect(response.status).toBe(204);
+		expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://example.com');
+		expect(response.headers.get('Access-Control-Allow-Methods')).toBe('GET');
+	});
+
+	it('lets allowed sites read results', async () => {
+		vi.spyOn(globalThis, 'fetch').mockImplementation(async () => Response.json({ data: [] }));
+		const response = await exports.default.fetch('https://flame.example.com/trending?domain=blog.example.com', { headers: { Origin: 'https://blog.example.com' } });
+		expect(response.status).toBe(200);
+		expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://blog.example.com');
+		expect(response.headers.get('Vary')).toBe('Origin');
+	});
+
+	it('gives other sites no CORS headers', async () => {
+		const response = await exports.default.fetch('https://flame.example.com/trending?domain=blog.example.com', { headers: { Origin: 'https://evil.net' } });
+		expect(response.status).toBe(403);
+		expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
 	});
 });
