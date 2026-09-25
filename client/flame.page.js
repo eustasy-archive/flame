@@ -4,9 +4,6 @@
 // https://html.spec.whatwg.org/multipage/microdata.html#values
 function flame_page_value(Element) {
 	var Tag, Value;
-	if ( !Element ) {
-		return '';
-	}
 	Tag = Element.tagName.toLowerCase();
 	if ( Element.hasAttribute('content') ) {
 		Value = Element.getAttribute('content');
@@ -22,24 +19,48 @@ function flame_page_value(Element) {
 	return ( Value || '' ).replace(/\s+/g, ' ').trim();
 }
 
+// Microdata on a nested item, like an article's author, isn't about the page.
+function flame_page_nested(Element) {
+	var Item = Element.parentElement && Element.parentElement.closest('[itemscope]');
+	return Element.hasAttribute('itemprop') && Item && Item.hasAttribute('itemprop');
+}
+
+// The first non-empty value, trying selectors in order of preference.
+function flame_page_first(Selectors) {
+	var Elements, Value;
+	for ( var i = 0; i < Selectors.length; i++ ) {
+		Elements = document.querySelectorAll(Selectors[i]);
+		for ( var j = 0; j < Elements.length; j++ ) {
+			if ( flame_page_nested(Elements[j]) ) {
+				continue;
+			}
+			Value = flame_page_value(Elements[j]);
+			if ( Value ) {
+				return Value;
+			}
+		}
+	}
+	return '';
+}
+
 // Title
-flame_page_title = flame_page_value(
-	document.getElementsByAttribute('property', 'og:title'      )[0] ||
-	document.getElementsByAttribute('itemprop', 'name'          )[0] ||
-	document.getElementsByName(                 'twitter:title' )[0]
-) || document.title;
+flame_page_title = flame_page_first([
+	'[property~="og:title"]',
+	'[itemprop~="name"]',
+	'meta[name="twitter:title"]'
+]) || document.title;
 
 // Description
-flame_page_description = flame_page_value(
-	document.getElementsByName(                 'description'         )[0] ||
-	document.getElementsByAttribute('property', 'og:description'      )[0] ||
-	document.getElementsByAttribute('itemprop', 'description'         )[0] ||
-	document.getElementsByName(                 'twitter:description' )[0]
-);
+flame_page_description = flame_page_first([
+	'meta[name="description"]',
+	'[property~="og:description"]',
+	'[itemprop~="description"]',
+	'meta[name="twitter:description"]'
+]);
 
 // Image
-flame_page_image = flame_page_value(
-	document.getElementsByAttribute('property', 'og:image'      )[0] ||
-	document.getElementsByAttribute('itemprop', 'image'         )[0] ||
-	document.getElementsByName(                 'twitter:image' )[0]
-);
+flame_page_image = flame_page_first([
+	'[property~="og:image"]',
+	'[itemprop~="image"]',
+	'meta[name="twitter:image"]'
+]);
