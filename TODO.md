@@ -7,9 +7,9 @@ Flame is an unfinished 2015 prototype. Nothing works end-to-end yet: the snippet
 ### Server (`index.php`)
 - [ ] `/script` reads `script.js` / `script.min.js` from the repo root, which don't exist (`index.php:21`).
 - [ ] `/inline` reads `flame.inline.*.js` from the repo root, but it lives in `_flame/` (`index.php:33`).
-- [ ] The GeoIP block runs after the JS is echoed and appends plain text to the response, breaking the script (`index.php:75`).
-- [ ] `geoip_country_name_by_name()` needs the PECL `geoip` extension, which uses MaxMind's legacy databases (discontinued 2019). Fatal error if it isn't installed.
-- [ ] Client IP is trusted from `Client-IP` / `X-Forwarded-For`, which are spoofable, and XFF can be a comma-separated list (`index.php:67`).
+- [x] The GeoIP block runs after the JS is echoed and appends plain text to the response, breaking the script (`index.php:75`).
+- [x] `geoip_country_name_by_name()` needs the PECL `geoip` extension, which uses MaxMind's legacy databases (discontinued 2019). Fatal error if it isn't installed.
+- [x] Client IP is trusted from `Client-IP` / `X-Forwarded-For`, which are spoofable, and XFF can be a comma-separated list (`index.php:67`). Removed with the GeoIP block.
 
 ### Snippets
 - [ ] Three different script URLs across the snippets: `/api/code.js` (`index.html`), `/api/flame/script.js` (`_flame/flame.inline.js`), `empty.js` (`index.min.html`). There are no rewrite rules, so none reach `index.php`.
@@ -33,6 +33,7 @@ Flame is an unfinished 2015 prototype. Nothing works end-to-end yet: the snippet
 - [ ] Consume the `extinguisher.q` command queue in the served script.
 - [ ] Send collected data to the server (`navigator.sendBeacon` / `fetch`).
 - [ ] Implement `PUT /track`.
+- [ ] Look up location in `/track` with MaxMind GeoLite2. Only trust `X-Forwarded-For` from known proxies.
 - [ ] Implement `GET /trending`, including the range limits in the README.
 - [ ] Add database connection code (none exists).
 - [ ] Settings (`index.php:45`).
@@ -56,4 +57,4 @@ Flame is an unfinished 2015 prototype. Nothing works end-to-end yet: the snippet
 - [x] **Platform.js** 1.3.0 → 1.3.6 (`_flame/lib.platform.js` + `.min.js`).
 - [ ] User-agent strings are now frozen. Consider also reading `navigator.userAgentData` (User-Agent Client Hints).
 - [x] **session.js** 0.4.1 is abandoned upstream. Replaced with `_flame/flame.session.js`, dropping its dead location and plugin detection.
-- [ ] Do location server-side with MaxMind GeoLite2 instead of PECL `geoip`.
+- [x] Remove the PECL `geoip` lookup. The GeoLite2 replacement belongs in `/track`, which doesn't exist yet (see Core).

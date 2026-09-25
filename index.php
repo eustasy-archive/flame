@@ -61,22 +61,6 @@ if ( 'script' == substr($Request, 0, 6) ) {
 
 // END IF FLAME
 
-if ( !empty($_SERVER['HTTP_CLIENT_IP']) ) {
-	$ip = $_SERVER['HTTP_CLIENT_IP'];
-} else if ( !empty($_SERVER['HTTP_X_FORWARDED_FOR']) ) {
-	$ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-} else if ( !empty($_SERVER['REMOTE_ADDR']) ) {
-	$ip = $_SERVER['REMOTE_ADDR'];
-} else {
-	$ip = false;
-}
-
-$country = geoip_country_name_by_name($ip);
-if ($country) {
-	echo 'This host is located in: ' . $country;
-	//header("Location: " . $somelocation);
-}
-
 
 // ELSE REDIRECT
 //} else {
