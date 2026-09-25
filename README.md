@@ -1,6 +1,20 @@
+# Flame
+
+Pageview and event tracking, with an API for trending pages. Unfinished; see [TODO.md](TODO.md).
+
+| Folder | Contents |
+|---|---|
+| `client/` | Browser scripts that collect pageview data, and the embed snippet (`flame.inline.js`). |
+| `server/` | A Cloudflare Worker that serves the client bundle and handles `/track` and `/trending`. Not written yet. |
+| `sql/` | The database schema. |
+
+`index.html` and `index.min.html` are example embeds of the snippet. `index.php` is the old PHP server, which the Worker replaces.
+
+## API
+
 ### get /script
 
-Fetches an asynchronous code snippet (which is surprisingly [well supported](http://caniuse.com/#feat=script-async)) that does all of the work once you've made your decisions. Not something you access directly, you use the snippet from [setup](SETUP.md).
+Fetches an asynchronous code snippet (which is surprisingly [well supported](http://caniuse.com/#feat=script-async)) that does all of the work once you've made your decisions. Not something you access directly, you use the snippet in [client/flame.inline.js](client/flame.inline.js).
 
 ```
 flame('setting', 'dnt-honor', true);
@@ -12,20 +26,25 @@ console.log(window.flame.q);
 ```
 
 ##### Operating System (Version) & Browser & Browser Version & Rendering Engine
-platform.js
+`client/lib.platform.js` ([Platform.js](https://github.com/bestiejs/platform.js))
 ##### Session & Referrer & Search & Mobile & Visits (New User)
-flame.session.js
+`client/flame.session.js`
+##### Page Title & Description & Image
+`client/flame.page.js`
 ##### Timezone
-flame.timezone.js
+`client/flame.timezone.js`
+##### Processor Cores
+`client/flame.processor.js`
 ##### Screen Resolution & Orientation & Depth & Viewport
 `screen.height & screen.width & screen.orientation.angle & screen.orientation.type & screen.colorDepth & screen.availHeight & screen.availWidth`
 ##### Language
-`navigator.languages ? navigator.languages[0] : ( navigator.userLanguage || navigator.systemLanguage || navigator.browserLanguage || navigator.language || false )`
-`$_SERVER['HTTP_ACCEPT_LANGUAGE']`
+`client/flame.language.js`: `navigator.languages ? navigator.languages[0] : ( navigator.userLanguage || navigator.systemLanguage || navigator.browserLanguage || navigator.language || false )`
+
+Falls back to the `Accept-Language` request header on the server.
 ##### Request
 `location`
 ##### Pageview & Location
-Server-side
+Server-side. Location comes from `request.cf` (country, region, city) in the Worker.
 
 ### put (post) /track
 | Key | Type | Default | Description |
