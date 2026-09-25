@@ -10,6 +10,13 @@
 	"build": {
 		"command": "npm run build"
 	},
+	// Pageviews and events. See sql/README.md for the layout.
+	"analytics_engine_datasets": [
+		{
+			"binding": "FLAME",
+			"dataset": "flame"
+		}
+	],
 	"assets": {
 		"directory": "./dist/public",
 		"binding": "ASSETS",

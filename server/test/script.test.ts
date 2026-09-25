@@ -30,6 +30,7 @@ describe('/flame.js', () => {
 
 	it('rejects other methods', async () => {
 		const response = await exports.default.fetch('https://flame.example.com/flame.js', { method: 'POST' });
-		expect(response.status).toBe(404);
+		expect(response.status).toBe(405);
+		expect(response.headers.get('Allow')).toBe('GET, HEAD');
 	});
 });

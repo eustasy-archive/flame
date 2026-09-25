@@ -14,7 +14,6 @@ Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` 
 
 - [x] Scaffold the Worker in `server/` (`wrangler.jsonc`, `package.json`, entry point).
 - [x] Return a 404 for unknown paths.
-- [ ] Implement `PUT /track`, writing one Analytics Engine data point per call.
 - [ ] Only accept `/track` and `/trending` for domains in an allowlist (`ALLOWED_DOMAINS`).
 - [ ] In `/track`, ignore requests that carry `Sec-GPC: 1` or `DNT: 1`. That also catches older client scripts.
 - [ ] Add CORS headers to `/track` and `/trending`, since other sites call them.
@@ -64,3 +63,4 @@ Nothing works end-to-end yet: the Worker serves the client bundle, but `/track` 
 - [x] The Analytics Engine data point layout is in `server/src/datapoint.ts` and documented in `sql/README.md`, replacing the MariaDB dumps (and with them, the settings table). The index is the page's domain. Long values are cut to a byte limit per field, so a data point always fits in 16 KB.
 - [x] Country, region and city come from `request.cf`. No GeoIP database is needed, and IP addresses aren't stored.
 - [x] Language falls back to the `Accept-Language` header when the client sends none.
+- [x] `PUT` or `POST /track` stores one Analytics Engine data point per call and returns a 204. It rejects bodies that aren't JSON, are over 64 KB, or have no type or http(s) URL.
