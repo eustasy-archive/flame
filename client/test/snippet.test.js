@@ -5,10 +5,13 @@ var Root = join(import.meta.dirname, '../..');
 var Minified = readFileSync(join(Root, 'client/snippet.min.js'), 'utf8').trim();
 var Readmes = [ 'README.md', 'client/README.md' ];
 
-// Each ```html block in a README that has the snippet in it.
+// Each ```html block in a README that has the snippet in it, as it would be
+// copied: without the indentation of a block inside a list.
 function pasted(file) {
-	var Blocks = readFileSync(join(Root, file), 'utf8').match(/```html\n[\s\S]*?```/g) || [];
-	return Blocks.map((Block) => Block.slice('```html\n'.length, -'```'.length)).filter((Block) => Block.includes("e['flm']"));
+	var Blocks = Array.from(readFileSync(join(Root, file), 'utf8').matchAll(/^( *)```html\n([\s\S]*?)^\1```/gm));
+	return Blocks
+		.map(([ , Indent, Block ]) => Block.split('\n').map((Line) => Line.startsWith(Indent) ? Line.slice(Indent.length) : Line).join('\n'))
+		.filter((Block) => Block.includes("e['flm']"));
 }
 
 describe.each(Readmes)('%s', (file) => {
