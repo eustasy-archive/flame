@@ -14,8 +14,8 @@ Nothing works end-to-end yet. The Worker doesn't exist, and `/track` and `/trend
 
 The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/`, so it stopped working when the files moved.
 
-- [ ] Scaffold the Worker in `server/` (`wrangler.jsonc`, `package.json`, entry point).
-- [ ] Return a 404 for unknown paths.
+- [x] Scaffold the Worker in `server/` (`wrangler.jsonc`, `package.json`, entry point).
+- [x] Return a 404 for unknown paths.
 - [ ] Serve the client bundle at one stable URL. Build it from `client/` at deploy time instead of joining files on every request. `?verbose` serves the unminified build.
 - [ ] Drop `/inline`. The snippet is meant to be pasted into pages, not fetched.
 - [ ] Delete `index.php` once the Worker serves the bundle.

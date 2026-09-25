@@ -1,0 +1,17 @@
+{
+	"name": "flame",
+	"private": true,
+	"type": "module",
+	"devDependencies": {
+		"@cloudflare/vitest-plugin": "^1.2.8",
+		"typescript": "^7.0.2",
+		"vitest": "^4.1.11",
+		"wrangler": "^4.141.0"
+	},
+	"scripts": {
+		"postinstall": "wrangler types",
+		"dev": "wrangler dev",
+		"test": "vitest run",
+		"check": "wrangler types && tsc -p . && tsc -p test"
+	}
+}
