@@ -1,3 +1,4 @@
+import { preflight, withCors } from './cors';
 import { notFound } from './respond';
 import { track } from './track';
 
@@ -8,7 +9,10 @@ export default {
 			case '/flame.js':
 				return only(request, ['GET', 'HEAD']) ?? script(request, env, url);
 			case '/track':
-				return only(request, ['PUT', 'POST']) ?? track(request, env);
+				if (request.method === 'OPTIONS') {
+					return preflight(request, env, ['PUT', 'POST']);
+				}
+				return withCors(request, env, only(request, ['PUT', 'POST']) ?? (await track(request, env)));
 		}
 		return notFound();
 	},
