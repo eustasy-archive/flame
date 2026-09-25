@@ -3,8 +3,10 @@
 Flame is an unfinished 2015 prototype, being rebuilt as three parts:
 
 - `client/`: browser scripts and the embed snippet
-- `server/`: a Cloudflare Worker, replacing `index.php`
-- `sql/`: the database schema
+- `server/`: a Cloudflare Worker in TypeScript, replacing `index.php`
+- `sql/`: the Analytics Engine queries behind `/trending`, and the layout of each data point
+
+Pageviews and events are stored in Workers Analytics Engine. It keeps data for three months, samples at high volume, and holds up to 20 strings (blobs) and 20 numbers (doubles) per data point. Only allowlisted domains can send data or read trending. Settings are made on the client with `flame('setting', …)`, so there's no settings table.
 
 Nothing works end-to-end yet. The Worker doesn't exist, and `/track` and `/trending` were never written.
 
@@ -13,46 +15,40 @@ Nothing works end-to-end yet. The Worker doesn't exist, and `/track` and `/trend
 The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/`, so it stopped working when the files moved.
 
 - [ ] Scaffold the Worker in `server/` (`wrangler.jsonc`, `package.json`, entry point).
+- [ ] Return a 404 for unknown paths.
 - [ ] Serve the client bundle at one stable URL. Build it from `client/` at deploy time instead of joining files on every request. `?verbose` serves the unminified build.
-- [ ] Decide whether `/inline` is still needed. The snippet is meant to be pasted into pages, not fetched.
-- [ ] Implement `PUT /track`.
+- [ ] Drop `/inline`. The snippet is meant to be pasted into pages, not fetched.
+- [ ] Delete `index.php` once the Worker serves the bundle.
+- [ ] Implement `PUT /track`, writing one Analytics Engine data point per call.
+- [ ] Only accept `/track` and `/trending` for domains in an allowlist (`ALLOWED_DOMAINS`).
 - [ ] In `/track`, ignore requests that carry `Sec-GPC: 1` or `DNT: 1`. That also catches older client scripts.
-- [ ] Implement `GET /trending`, including the range limits in the README.
-- [ ] Take location from `request.cf` (country, region, city). No GeoIP database is needed. If the client IP is needed at all, use `CF-Connecting-IP`.
+- [ ] Take location from `request.cf` (country, region, city, timezone). No GeoIP database is needed, and IP addresses aren't stored.
 - [ ] Fall back to the `Accept-Language` header when the client sends no language.
 - [ ] Add CORS headers to `/track` and `/trending`, since other sites call them.
-- [ ] Return a 404 (or redirect to extinguisher.io) for unknown paths.
-- [ ] Settings (the `// TODO Settings` in `index.php`).
-- [ ] Delete `index.php` once the Worker serves the bundle.
+- [ ] Implement `GET /trending` through the Analytics Engine SQL API, including the range limits in the README.
+- [ ] Support `format=xml` in `/trending`.
+- [ ] Support `terms` in `/trending`.
 
-## Database (`sql/`)
+## Analytics Engine (`sql/`)
 
-- [ ] Convert the MariaDB dumps to D1 (SQLite) migrations. They use MySQL-only syntax (`ENGINE=InnoDB`, `AUTO_INCREMENT`, `int(11)`, `/*!40101 … */`). This also fixes the `latin1` tables, since SQLite stores text as UTF-8.
-- [ ] Decide whether raw pageviews and events go in D1 or in Workers Analytics Engine, which is built for high-volume event data.
-- [ ] Add a timestamp column to `Pageviews` and `Events`. Without one, trending over a time range can't be queried.
-- [ ] Give `Events.id` a primary key. It currently defaults to `0` and never increments.
-- [ ] Add location columns (country, region, city) for the `request.cf` data.
-- [ ] Store `title`, `image` and `description`, which `/trending` documents but no table holds.
-- [ ] Add indexes on domain + time.
-- [ ] In `Settings`, rename `dnt-honor` to `honor-privacy-signals` (default `true`), and update the `flame('setting', 'dnt-honor', true)` examples. Drop `dnt-honor-ie9`, which only existed because IE9 sent Do Not Track by default.
+- [ ] Replace the MariaDB dumps with the Analytics Engine data point layout: which blob and double holds each field, with the domain as the index (the sampling key). Timestamps are added automatically, and there are no row ids.
+- [ ] Keep the `/trending` queries as `.sql` files the Worker loads.
+- [ ] Never paste request values into SQL. The SQL API has no parameters and doesn't document string escaping.
 
 ## Client (`client/`)
 
-### Broken
+- [ ] Add a build step (esbuild) that bundles and minifies `client/`, replacing the hand-committed `.min.js` files. Bundling also stops the `flame_*` globals leaking onto host sites.
 - [ ] Snippets load from three different URLs: `/api/code.js` (`index.html`), `/api/flame/script.js` (`client/flame.inline.js`) and `empty.js` (`index.min.html`). Point them all at the Worker's bundle URL.
-
-### To do
 - [ ] Consume the command queue. The queue function's name is in `window.flm` (`flame` by default), and its calls are in `.q`.
-- [ ] Send collected data to `/track` (`navigator.sendBeacon` / `fetch`).
-- [ ] Honour privacy signals. If `navigator.globalPrivacyControl === true` or `navigator.doNotTrack === '1'`, collect and send nothing, and check before `flame.session.js` writes to localStorage. Global Privacy Control replaces Do Not Track, which is deprecated (Firefox removed it in 135) but still sent by Chrome.
-- [ ] Check whether the session ID that `flame.session.js` keeps in localStorage needs consent in the EU. Privacy signals don't cover that.
-- [ ] Add a build step (e.g. esbuild) that bundles and minifies `client/`, replacing the hand-committed `.min.js` files.
-- [ ] Wrap client code in an IIFE. It currently leaks `flame_*` globals on host sites.
-- [ ] User-agent strings are now frozen. Consider also reading `navigator.userAgentData` (User-Agent Client Hints).
+- [ ] Send collected data to `/track` (`navigator.sendBeacon`, falling back to `fetch`).
+- [ ] Honour privacy signals. If `navigator.globalPrivacyControl === true` or `navigator.doNotTrack === '1'`, collect and send nothing. The setting is `honor-privacy-signals` (default `true`), replacing `dnt-honor`.
+- [ ] Let sites turn off the localStorage session ID with `flame('setting', 'session', false)`, e.g. until they have consent. In the EU, storing it generally needs consent, since analytics isn't strictly necessary. Privacy signals don't cover that.
+- [ ] User-agent strings are now frozen. Also read `navigator.userAgentData` (User-Agent Client Hints) where it's available.
 
 ## Docs
 
 - [ ] README "Results for Subscriptions" section is empty.
+- [ ] Document the `/track` payload, settings, and how to configure and deploy the Worker.
 
 ## Done
 
