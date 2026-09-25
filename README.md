@@ -36,7 +36,7 @@ console.log(window.flame.q);
 ##### Processor Cores
 `client/flame.processor.js`
 ##### Screen Resolution & Orientation & Depth & Viewport
-`screen.height & screen.width & screen.orientation.angle & screen.orientation.type & screen.colorDepth & screen.availHeight & screen.availWidth`
+`client/flame.display.js`
 ##### Language
 `client/flame.language.js`: `navigator.languages ? navigator.languages[0] : ( navigator.userLanguage || navigator.systemLanguage || navigator.browserLanguage || navigator.language || false )`
 
