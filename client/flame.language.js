@@ -1,3 +1,5 @@
 ////	Language
-flame_language = navigator.languages ? navigator.languages[0] : ( navigator.userLanguage || navigator.systemLanguage || navigator.browserLanguage || navigator.language || false );
-// Falls back to $_SERVER['HTTP_ACCEPT_LANGUAGE']
+// The server falls back to the Accept-Language header.
+export function language() {
+	return navigator.languages ? navigator.languages[0] : ( navigator.userLanguage || navigator.systemLanguage || navigator.browserLanguage || navigator.language || false );
+}

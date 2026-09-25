@@ -37,7 +37,6 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 
 ## Client (`client/`)
 
-- [ ] Add a build step (esbuild) that bundles and minifies `client/`, replacing the hand-committed `.min.js` files. Bundling also stops the `flame_*` globals leaking onto host sites.
 - [ ] Snippets load from three different URLs: `/api/code.js` (`index.html`), `/api/flame/script.js` (`client/flame.inline.js`) and `empty.js` (`index.min.html`). Point them all at the Worker's bundle URL.
 - [ ] Consume the command queue. The queue function's name is in `window.flm` (`flame` by default), and its calls are in `.q`.
 - [ ] Send collected data to `/track` (`navigator.sendBeacon`, falling back to `fetch`).
@@ -66,3 +65,5 @@ The Worker replaces `index.php`. Don't fix the PHP: it still loads from `_flame/
 - [x] `flame.page.js` tries each candidate until one has a value, only reads `name=` lookups from `<meta>` tags, and skips microdata on nested items such as an article's author.
 - [x] `flame.page.js` prefers microdata on the page's main item (`Article`, `WebPage`, `Product`, `mainEntity`, etc.) and ignores site-wide items such as `Organization` and `WebSite`.
 - [x] Removed `function.getElementsByAttribute.js`, which patched `HTMLElement.prototype`. `flame.page.js` uses `querySelectorAll` instead.
+- [x] `npm run build` in `server/` bundles `client/flame.js` with esbuild into `dist/public/flame.js` and `flame.min.js`. The bundle adds no globals to host pages, and Platform.js no longer registers with AMD loaders like RequireJS. `lib.platform.min.js` is gone. `flame.inline.min.js` stays as the snippet to paste.
+- [x] Client tests run in Vitest with jsdom (`client/test/`).

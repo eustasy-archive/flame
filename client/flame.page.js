@@ -2,7 +2,7 @@
 
 // The value of a meta tag, or of microdata on an ordinary element.
 // https://html.spec.whatwg.org/multipage/microdata.html#values
-function flame_page_value(Element) {
+function itemValue(Element) {
 	var Tag, Value;
 	Tag = Element.tagName.toLowerCase();
 	if ( Element.hasAttribute('content') ) {
@@ -22,7 +22,7 @@ function flame_page_value(Element) {
 // How well an element describes the page: 1 for the page's main item, 2 for any other
 // top-level item, or false for microdata that isn't about the page. That's a nested item,
 // like an article's author, or a site-wide one, like the publisher in the header.
-function flame_page_rank(Element) {
+function itemRank(Element) {
 	var Item, Types;
 	if ( !Element.hasAttribute('itemprop') ) {
 		return 1;
@@ -53,16 +53,16 @@ function flame_page_rank(Element) {
 
 // The first non-empty value, trying selectors in order of preference,
 // and the best-ranked elements first within each.
-function flame_page_first(Selectors) {
+function firstValue(Selectors) {
 	var Elements, Value;
 	for ( var i = 0; i < Selectors.length; i++ ) {
 		Elements = document.querySelectorAll(Selectors[i]);
 		for ( var Rank = 1; Rank <= 2; Rank++ ) {
 			for ( var j = 0; j < Elements.length; j++ ) {
-				if ( flame_page_rank(Elements[j]) !== Rank ) {
+				if ( itemRank(Elements[j]) !== Rank ) {
 					continue;
 				}
-				Value = flame_page_value(Elements[j]);
+				Value = itemValue(Elements[j]);
 				if ( Value ) {
 					return Value;
 				}
@@ -72,24 +72,23 @@ function flame_page_first(Selectors) {
 	return '';
 }
 
-// Title
-flame_page_title = flame_page_first([
-	'[property~="og:title"]',
-	'[itemprop~="name"]',
-	'meta[name="twitter:title"]'
-]) || document.title;
-
-// Description
-flame_page_description = flame_page_first([
-	'meta[name="description"]',
-	'[property~="og:description"]',
-	'[itemprop~="description"]',
-	'meta[name="twitter:description"]'
-]);
-
-// Image
-flame_page_image = flame_page_first([
-	'[property~="og:image"]',
-	'[itemprop~="image"]',
-	'meta[name="twitter:image"]'
-]);
+export function page() {
+	return {
+		title: firstValue([
+			'[property~="og:title"]',
+			'[itemprop~="name"]',
+			'meta[name="twitter:title"]'
+		]) || document.title,
+		description: firstValue([
+			'meta[name="description"]',
+			'[property~="og:description"]',
+			'[itemprop~="description"]',
+			'meta[name="twitter:description"]'
+		]),
+		image: firstValue([
+			'[property~="og:image"]',
+			'[itemprop~="image"]',
+			'meta[name="twitter:image"]'
+		])
+	};
+}

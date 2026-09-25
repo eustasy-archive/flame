@@ -1,7 +1,7 @@
 ////	Session
 // Replaces session.js 0.4.1: session, visits, referrer, search engine and mobile detection.
 // Location is looked up server-side, and browser plugins are no longer detected.
-var flame_session = (function() {
+export function session() {
 
 	var Session_Timeout = 30 * 60 * 1000;           // A session ends after 30 minutes without a pageview.
 	var Visitor_Timeout = 32 * 24 * 60 * 60 * 1000; // Visits are counted over 32 days, as session.js did.
@@ -134,4 +134,4 @@ var flame_session = (function() {
 		mobile:      mobile()
 	};
 
-})();
+}
