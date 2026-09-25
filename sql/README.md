@@ -1,6 +1,6 @@
-# Analytics Engine layout
+# Analytics Engine
 
-Flame stores each pageview or event from `/track` as one data point in [Workers Analytics Engine](https://developers.cloudflare.com/analytics/analytics-engine/), in the dataset bound as `FLAME`. The layout is defined in [`server/src/datapoint.ts`](../server/src/datapoint.ts). This page describes the same layout for anyone writing queries.
+The [Worker](../server/README.md) stores each pageview or event from `/track` as one data point in [Workers Analytics Engine](https://developers.cloudflare.com/analytics/analytics-engine/), in the dataset bound as `FLAME`, and `/trending` queries it with the templates here. The layout is defined in [`server/src/datapoint.ts`](../server/src/datapoint.ts). This page describes the same layout for anyone writing queries.
 
 - **Timestamps** are added by Analytics Engine, in the `timestamp` column.
 - **There are no row ids.** Data points can't be updated or deleted.
@@ -58,3 +58,23 @@ Strings, cut to the byte limit shown.
 | `double11` | timezone_offset | Hours from UTC, e.g. `1` or `-2.5`. |
 | `double12` | timezone_dst | 1 if daylight saving time is in effect, otherwise 0. |
 | `double13` | cores | The number of CPU cores the browser reports. |
+
+## Queries
+
+`/trending` runs these templates, which the Worker imports as text.
+
+| File | For |
+|---|---|
+| [`trending-pageviews.sql`](trending-pageviews.sql) | The most viewed pages. |
+| [`trending-values.sql`](trending-values.sql) | Payments or subscriptions by category. |
+| [`trending-total.sql`](trending-total.sql) | Totals, which percentages are worked out from. |
+
+[`server/src/trending.ts`](../server/src/trending.ts) fills in each `{placeholder}` and drops the `--` comments. The SQL API has no query parameters and doesn't document how quotes in strings are escaped, so request values never go into a template as they are. Only these do:
+
+- known types
+- integers
+- hostnames from the allowlist
+- categories as hex, compared with `lower(hex(blob3))`
+- search terms limited to letters, numbers, spaces, hyphens and underscores
+
+A test checks each template's columns against the layout above.
