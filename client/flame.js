@@ -9,16 +9,70 @@ import { page } from './flame.page.js';
 import { session } from './flame.session.js';
 import { timezone } from './flame.timezone.js';
 
+// Where this script was loaded from, which is also where data is sent.
+var Server = server();
+
+var Settings = {};
+
+// Commands for flame('command', …).
+var Commands = {
+	setting: function(Name, Value) {
+		Settings[Name] = Value;
+	},
+	track: track
+};
+
+function server() {
+	// currentScript is only set while this script first runs.
+	var Script = document.currentScript || document.querySelector('script[src*="/flame.js"]');
+	try {
+		return new URL(Script.src).origin;
+	} catch ( e ) {
+		warn('Flame couldn\'t tell where it was loaded from, so it won\'t send anything.');
+		return false;
+	}
+}
+
+function warn(Message) {
+	if ( window.console && console.warn ) {
+		console.warn(Message);
+	}
+}
+
+// The session only counts one pageview per page load, however often it's read.
+var Current_Session = null;
+function currentSession() {
+	if ( !Current_Session ) {
+		Current_Session = session();
+	}
+	return Current_Session;
+}
+
 // Everything collected about this pageview.
 function collect() {
 	var Display = display();
+	var Page = page();
+	var Session = currentSession();
 	return {
-		url:      location.href,
-		referrer: document.referrer,
-		page:     page(),
-		session:  session(),
-		browser:  { name: platform.name, version: platform.version, engine: platform.layout },
+		url:         location.href.split('#')[0],
+		referrer:    document.referrer,
+		title:       Page.title,
+		description: Page.description,
+		image:       Page.image,
+		session: {
+			id:          Session.id,
+			visits:      Session.visits,
+			pageviews:   Session.pageviews,
+			new_visitor: Session.new_visitor,
+			search:      Session.search
+		},
+		browser: {
+			name:    platform.name || false,
+			version: platform.version || false,
+			engine:  platform.layout || false
+		},
 		os:       String( platform.os ),
+		mobile:   Session.mobile,
 		screen:   Display.screen,
 		viewport: Display.viewport,
 		language: language(),
@@ -27,5 +81,56 @@ function collect() {
 	};
 }
 
-// Nothing sends this yet: that comes with the command queue.
-collect();
+// flame('track', type, data, category)
+// Pageviews default their data to the page's URL. Payments and subscriptions
+// take an amount as their data, as an integer (e.g. pence) rather than a float.
+function track(Type, Data, Category) {
+	var Payload = collect();
+	Payload.type = String( Type || 'pageview' );
+	if ( Data === undefined || Data === null ) {
+		Data = Payload.type == 'pageview' ? Payload.url : '';
+	}
+	Payload.data = String( Data );
+	Payload.category = Category ? String( Category ) : '';
+	Payload.value = ( Payload.type == 'payment' || Payload.type == 'subscription' ) ? ( Number( Data ) || 0 ) : 0;
+	send('/track', Payload);
+}
+
+function send(Path, Payload) {
+	var Body = JSON.stringify(Payload);
+	if ( !Server ) {
+		return;
+	}
+	// Sent as text/plain, so it's a simple request that needs no CORS preflight.
+	if ( navigator.sendBeacon && navigator.sendBeacon(Server + Path, new Blob([ Body ], { type: 'text/plain' })) ) {
+		return;
+	}
+	if ( window.fetch ) {
+		fetch(Server + Path, { method: 'POST', body: Body, keepalive: true, mode: 'no-cors', credentials: 'omit' })['catch'](function() {});
+	}
+}
+
+// Run one flame(…) call. Mistakes are logged, never thrown at the host page.
+function run(Args) {
+	var Command = Commands[Args[0]];
+	if ( !Command ) {
+		warn('Flame doesn\'t know the command "' + Args[0] + '".');
+		return;
+	}
+	try {
+		Command.apply(null, Array.prototype.slice.call(Args, 1));
+	} catch ( e ) {
+		warn(e);
+	}
+}
+
+// The snippet queued calls on window[window.flm] until now. Replace it with a
+// function that runs them straight away, then run what was queued.
+var Name = window.flm || 'flame';
+var Queue = ( window[Name] && window[Name].q ) || [];
+window[Name] = function() {
+	run(arguments);
+};
+for ( var i = 0; i < Queue.length; i++ ) {
+	run(Queue[i]);
+}
