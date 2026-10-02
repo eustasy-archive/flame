@@ -20,7 +20,7 @@ describe('visitor', () => {
 			await env.SALTS.delete(name);
 		}
 		vi.useFakeTimers({ toFake: ['Date'] });
-		vi.setSystemTime(new Date('2026-09-25T12:00:00Z'));
+		vi.setSystemTime(new Date('2037-09-25T12:00:00Z'));
 	});
 	afterEach(() => {
 		vi.useRealTimers();
@@ -42,20 +42,20 @@ describe('visitor', () => {
 
 	it('changes the next day', async () => {
 		const today = await visitor(request(), env, 'blog.example.com');
-		vi.setSystemTime(new Date('2026-09-26T00:00:01Z'));
+		vi.setSystemTime(new Date('2037-09-26T00:00:01Z'));
 		expect(await visitor(request(), env, 'blog.example.com')).not.toBe(today);
 	});
 
 	it('keeps a random salt in KV until an hour after the day ends', async () => {
 		await visitor(request(), env, 'blog.example.com');
 		const { keys } = await env.SALTS.list();
-		expect(keys.map((key) => key.name)).toEqual(['salt:2026-09-25']);
-		expect(keys[0].expiration).toBe(Date.UTC(2026, 8, 26, 1) / 1000);
-		expect(await env.SALTS.get('salt:2026-09-25')).toMatch(/^[0-9a-f]{64}$/);
+		expect(keys.map((key) => key.name)).toEqual(['salt:2037-09-25']);
+		expect(keys[0].expiration).toBe(Date.UTC(2037, 8, 26, 1) / 1000);
+		expect(await env.SALTS.get('salt:2037-09-25')).toMatch(/^[0-9a-f]{64}$/);
 	});
 
 	it('uses the salt already in KV, and stores nothing else', async () => {
-		await env.SALTS.put('salt:2026-09-25', 'a'.repeat(64));
+		await env.SALTS.put('salt:2037-09-25', 'a'.repeat(64));
 		const id = await visitor(request(), env, 'blog.example.com');
 		expect(id).toBe(await hash('a'.repeat(64), 'blog.example.com', '203.0.113.7', Chrome));
 		expect((await env.SALTS.list()).keys).toHaveLength(1);
