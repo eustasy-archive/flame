@@ -3,7 +3,7 @@
 	"private": true,
 	"type": "module",
 	"devDependencies": {
-		"@cloudflare/vitest-plugin": "^1.6.0",
+		"@cloudflare/vitest-plugin": "^1.6.1",
 		"esbuild": "^0.28.2",
 		"jsdom": "^31.0.0",
 		"typescript": "^7.0.2",
