@@ -7,7 +7,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "monthly"
     assignees:
       - "lewisgoddard"
     groups:
@@ -20,7 +20,7 @@ updates:
   - package-ecosystem: "npm"
     directory: "/server"
     schedule:
-      interval: "daily"
+      interval: "monthly"
     assignees:
       - "lewisgoddard"
     groups:
